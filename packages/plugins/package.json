@@ -1,0 +1,37 @@
+{
+  "name": "@prosdevlab/experience-sdk-plugins",
+  "version": "0.1.0",
+  "description": "Official plugins for Experience SDK",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@monorepo/core": "workspace:*"
+  },
+  "dependencies": {
+    "@lytics/sdk-kit": "^0.1.1",
+    "@prosdevlab/experience-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

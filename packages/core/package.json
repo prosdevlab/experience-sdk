@@ -1,0 +1,54 @@
+{
+  "name": "@prosdevlab/experience-sdk",
+  "version": "0.1.0",
+  "description": "A lightweight, explainable client-side experience runtime",
+  "private": false,
+  "type": "module",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "experience",
+    "personalization",
+    "targeting",
+    "explainability",
+    "sdk-kit",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prosdevlab/experience-sdk.git",
+    "directory": "packages/core"
+  },
+  "author": "prosdevlab",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@lytics/sdk-kit": "^0.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
