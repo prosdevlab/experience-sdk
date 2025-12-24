@@ -43,7 +43,7 @@ Build the foundational Experience SDK with explainability-first architecture. Th
 └── Exports               # Singleton + createInstance pattern
 
 @prosdevlab/experience-sdk-plugins
-├── Storage Plugin         # Frequency capping
+├── Frequency Plugin       # Frequency capping (uses sdk-kit storage)
 ├── Debug Plugin          # Event emission
 └── Banner Plugin         # Experience delivery
 ```

@@ -124,26 +124,27 @@ Write comprehensive unit tests for ExperienceRuntime
 
 ### 🔌 Phase 3: Essential Plugins
 
-#### Task 3.1: Build Storage Plugin
+#### Task 3.1: Build Frequency Capping Plugin
 **Priority:** P0 (Blocking)  
-**Estimate:** 3-4 hours  
+**Estimate:** 2-3 hours  
 **Assignee:** TBD
 
 **Description:**
-Implement storage plugin for frequency capping
+Implement frequency capping plugin that leverages sdk-kit's storage plugin
 
 **Files:**
-- `packages/plugins/src/storage/index.ts`
+- `packages/plugins/src/frequency/index.ts`
 
 **Acceptance Criteria:**
 - [ ] Plugin follows sdk-kit pattern
-- [ ] Uses sessionStorage by default
-- [ ] Falls back to memory storage
-- [ ] Tracks impression counts
-- [ ] Enforces frequency caps
+- [ ] **Uses `@lytics/sdk-kit-plugins/storage`** for persistence
+- [ ] Auto-loads storage plugin if not already loaded
+- [ ] Tracks impression counts per experience
+- [ ] Enforces frequency caps (max per session/day/week)
 - [ ] Listens to `experiences:evaluated` event
 - [ ] Updates decision reasons
-- [ ] Exposes `hasShown()`, `recordImpression()`, `clear()` methods
+- [ ] Exposes `getImpressionCount()`, `hasReachedCap()`, `recordImpression()` methods
+- [ ] Emits `experiences:impression-recorded` events
 
 **Dependencies:** Task 2.1
 
@@ -214,12 +215,12 @@ Implement banner plugin for experience delivery
 Write unit tests for all three plugins
 
 **Files:**
-- `packages/plugins/src/storage/storage.test.ts`
+- `packages/plugins/src/frequency/frequency.test.ts`
 - `packages/plugins/src/debug/debug.test.ts`
 - `packages/plugins/src/banner/banner.test.ts`
 
 **Test Coverage:**
-- [ ] Storage plugin tests (impressions, caps, fallback)
+- [ ] Frequency plugin tests (impressions, caps, storage integration)
 - [ ] Debug plugin tests (window events, console)
 - [ ] Banner plugin tests (rendering, dismissal, cleanup)
 - [ ] Coverage > 80%

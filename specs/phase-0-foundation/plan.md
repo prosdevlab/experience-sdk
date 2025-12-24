@@ -1,7 +1,44 @@
 # Implementation Plan - Phase 0: Foundation
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** December 24, 2025
+
+---
+
+## SDK-Kit Available Capabilities
+
+Before implementation, we've reviewed `@lytics/sdk-kit` and `@lytics/sdk-kit-plugins` to leverage existing functionality:
+
+### ✅ Available in sdk-kit (USE THESE)
+- **Core Capabilities:**
+  - `SDK` class - Main SDK with plugin system
+  - `Emitter` - Event system with wildcard support (`*`, `widget.*`, `*.show`)
+  - `Config` - Configuration management with deep merge
+  - `Namespace` - Plugin namespacing
+  - `Expose` - Public API exposure
+
+- **Available Plugins:**
+  - **`storagePlugin`** - ✅ Full-featured storage with:
+    - Multiple backends (localStorage, sessionStorage, cookie, memory)
+    - TTL/expiration support
+    - Namespace isolation
+    - Automatic fallback
+    - Events: `storage:set`, `storage:get`, `storage:expired`
+  - **`contextPlugin`** - Browser context (device, page, screen, environment)
+  - **`queuePlugin`** - Queue management with retry logic
+  - **`transportPlugin`** - HTTP transport with fetch/beacon
+  - **`consentPlugin`** - Consent management
+  - **`pollPlugin`** - Polling with conditions
+
+### ❌ NOT Available in sdk-kit (WE BUILD THESE)
+- **Debug/Logging Plugin** - Window event emission for Chrome extension
+- **Experience-Specific Plugins** - Banner, Modal, Tooltip rendering
+
+### 📝 Implementation Strategy
+1. **Use sdk-kit's storage plugin** for frequency capping (don't reinvent!)
+2. **Build minimal plugins** only where sdk-kit doesn't provide functionality
+3. **Design for contribution** - If we build something generic, consider upstreaming to sdk-kit
+4. **Experience-specific stays with us** - UI rendering plugins are domain-specific
 
 ---
 
@@ -540,66 +577,93 @@ describe('Exports', () => {
 
 ### Phase 3: Plugins
 
-**Goal:** Build three essential plugins following sdk-kit patterns
+**Goal:** Build essential plugins, leveraging sdk-kit where possible
 
-#### 3.1 Storage Plugin (Frequency Capping)
+#### 3.1 Frequency Capping Plugin (Uses sdk-kit's Storage)
 
-**File:** `packages/plugins/src/storage/index.ts`
+**File:** `packages/plugins/src/frequency/index.ts`
+
+**Strategy:** Use `@lytics/sdk-kit-plugins/storage` for persistence, add frequency logic on top
 
 **Implementation:**
 
 ```typescript
 import type { PluginFunction } from '@lytics/sdk-kit';
+import { storagePlugin } from '@lytics/sdk-kit-plugins/storage';
 
 /**
- * Storage Plugin
+ * Frequency Capping Plugin
  * 
- * Handles frequency capping by tracking experience impressions
- * in sessionStorage (with memory fallback)
+ * Tracks experience impressions and enforces frequency caps
+ * Leverages sdk-kit's storage plugin for persistence
  */
-export const storagePlugin: PluginFunction = (plugin, instance, config) => {
-  plugin.ns('experiences.storage');
+export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
+  plugin.ns('experiences.frequency');
 
   plugin.defaults({
-    storage: {
-      backend: 'session',
-      prefix: 'exp_',
+    frequency: {
+      enabled: true,
+      storageNamespace: 'exp',
     },
   });
 
-  // Storage backend (with fallback)
-  const storage = getStorage(config.get('storage.backend'));
-  const prefix = config.get('storage.prefix');
+  // Ensure storage plugin is loaded
+  if (!instance.storage) {
+    instance.use(storagePlugin);
+  }
+
+  const enabled = config.get('frequency.enabled');
+  const namespace = config.get('frequency.storageNamespace');
+
+  if (!enabled) return;
 
   /**
-   * Check if experience has been shown
+   * Get impression count for an experience
    */
-  function hasShown(experienceId: string, frequency: any): boolean {
-    const key = `${prefix}${experienceId}`;
-    const count = parseInt(storage.getItem(key) || '0', 10);
-    return count >= frequency.max;
+  function getImpressionCount(experienceId: string): number {
+    const key = `${namespace}:${experienceId}`;
+    const data = instance.storage.get<{ count: number }>(key, { backend: 'sessionStorage' });
+    return data?.count || 0;
   }
 
   /**
-   * Record impression
+   * Check if experience has hit frequency cap
+   */
+  function hasReachedCap(experienceId: string, max: number): boolean {
+    return getImpressionCount(experienceId) >= max;
+  }
+
+  /**
+   * Record impression for an experience
    */
   function recordImpression(experienceId: string): void {
-    const key = `${prefix}${experienceId}`;
-    const count = parseInt(storage.getItem(key) || '0', 10);
-    storage.setItem(key, String(count + 1));
+    const key = `${namespace}:${experienceId}`;
+    const count = getImpressionCount(experienceId) + 1;
+    
+    instance.storage.set(key, { count, lastSeen: Date.now() }, {
+      backend: 'sessionStorage',
+      namespace,
+    });
+
+    instance.emit('experiences:impression-recorded', { experienceId, count });
+  }
+
+  /**
+   * Clear impressions
+   */
+  function clearImpressions(): void {
+    // Note: storage.clear() clears ALL storage, not just our namespace
+    // For now, we'll just rely on session expiry
+    instance.emit('experiences:impressions-cleared');
   }
 
   // Expose API
   plugin.expose({
-    storage: {
-      hasShown,
+    frequency: {
+      getImpressionCount,
+      hasReachedCap,
       recordImpression,
-      clear: () => {
-        // Clear all experience impressions
-        if (storage.clear) {
-          storage.clear();
-        }
-      },
+      clearImpressions,
     },
   });
 
@@ -607,61 +671,41 @@ export const storagePlugin: PluginFunction = (plugin, instance, config) => {
   instance.on('experiences:evaluated', (decision: any) => {
     if (decision.show && decision.experienceId) {
       const experience = instance.getState?.().experiences.get(decision.experienceId);
+      
       if (experience?.frequency) {
-        if (hasShown(decision.experienceId, experience.frequency)) {
+        const max = experience.frequency.max;
+        
+        if (hasReachedCap(decision.experienceId, max)) {
           // Block showing
           decision.show = false;
-          decision.reasons.push(`❌ Frequency cap reached`);
+          decision.reasons.push(`❌ Frequency cap reached (${max} per ${experience.frequency.per})`);
         } else {
           // Record impression
           recordImpression(decision.experienceId);
-          decision.reasons.push(`✅ Impression recorded (${storage.getItem(`${prefix}${decision.experienceId}`)}/${experience.frequency.max})`);
+          const count = getImpressionCount(decision.experienceId);
+          decision.reasons.push(`✅ Impression recorded (${count}/${max})`);
         }
       }
     }
   });
 };
-
-// Storage backend helper
-function getStorage(type: string): Storage {
-  try {
-    const storage = type === 'local' ? localStorage : sessionStorage;
-    // Test if accessible
-    const test = '__test__';
-    storage.setItem(test, test);
-    storage.removeItem(test);
-    return storage;
-  } catch {
-    // Fallback to memory
-    return createMemoryStorage();
-  }
-}
-
-function createMemoryStorage(): Storage {
-  const store = new Map<string, string>();
-  return {
-    getItem: (key) => store.get(key) ?? null,
-    setItem: (key, value) => store.set(key, value),
-    removeItem: (key) => store.delete(key),
-    clear: () => store.clear(),
-    key: (index) => Array.from(store.keys())[index] ?? null,
-    length: store.size,
-  } as Storage;
-}
 ```
 
 **Dependencies:**
 - `@lytics/sdk-kit`
+- `@lytics/sdk-kit-plugins/storage` ✅ (reusing!)
 
-**Estimate:** 3-4 hours
+**Estimate:** 2-3 hours (reduced - leveraging sdk-kit storage)
 
 **Tests:**
 ```typescript
-describe('Storage Plugin', () => {
-  it('should track impressions');
+describe('Frequency Plugin', () => {
+  it('should track impressions using sdk-kit storage');
   it('should enforce frequency caps');
-  it('should fallback to memory storage');
+  it('should work when storage plugin is pre-loaded');
+  it('should auto-load storage plugin if missing');
   it('should clear impressions');
+  it('should emit impression events');
 });
 ```
 

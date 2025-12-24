@@ -1,0 +1,154 @@
+# Experience SDK - Development Guidelines
+
+This project follows a **spec-driven development workflow** inspired by [github/spec-kit](https://github.com/github/spec-kit).
+
+## Development Workflow
+
+### 1. Research Phase (Personal, Gitignored)
+- Use `notes/` directory for personal research, brainstorming, and exploration
+- Document findings, API comparisons, architecture ideas
+- Keep it informal and iterative
+- **These files are gitignored** - they're your working space
+
+### 2. Planning Phase (Formal, Committed)
+- Create specifications in `specs/phase-X-name/`:
+  - `spec.md` - Formal specification with goals, scope, user stories
+  - `plan.md` - Detailed implementation plan with code examples
+  - `tasks.md` - Breakdown into GitHub-ready issues
+  - `contracts/` - Type definitions and API contracts
+
+### 3. Issue Creation
+- Convert tasks from `tasks.md` into GitHub issues
+- Tag with appropriate labels and milestone
+- Include acceptance criteria as checklists
+
+### 4. Implementation
+- Follow the plan.md implementation order
+- Update issue status as work progresses
+- Write tests alongside implementation
+
+### 5. Validation
+- All acceptance criteria met
+- Tests passing (>80% coverage)
+- Linter clean
+- Documentation updated
+
+## Project Architecture
+
+### Built on @lytics/sdk-kit
+This SDK is built on top of `@lytics/sdk-kit`, an open-source plugin framework.
+
+**Core Principle:** Leverage what exists, build what's missing.
+
+#### ✅ Available in sdk-kit (USE THESE)
+- **Core:** `SDK`, `Emitter`, `Config`, `Namespace`, `Expose`
+- **Plugins:** `storagePlugin`, `contextPlugin`, `queuePlugin`, `transportPlugin`, `consentPlugin`, `pollPlugin`
+
+#### 🔨 Build These (Experience-Specific)
+- `frequencyPlugin` - Uses sdk-kit's storage underneath
+- `debugPlugin` - Window event emission for Chrome extension
+- `bannerPlugin` - DOM rendering for experiences
+
+#### 💡 Design for Contribution
+If we build something generic that could benefit other sdk-kit users, design it for potential contribution back to sdk-kit.
+
+## Code Standards
+
+### TypeScript
+- Strict mode enabled
+- Full type coverage
+- Export all public types
+- Prefer pure functions for testability
+- Extract logic into pure functions when possible
+
+### Testing
+- Unit tests for all functionality
+- >80% coverage minimum
+- Test both happy path and error cases
+- Testability-first: design code to be easily testable
+
+### Plugins
+- Follow sdk-kit plugin patterns
+- Use `plugin.ns()` for namespacing
+- Use `plugin.defaults()` for config
+- Use `plugin.expose()` for public API
+- Emit events for observability
+
+### Explainability-First
+Every decision must include:
+- Human-readable reasons (`reasons: string[]`)
+- Machine-readable trace (`trace: TraceStep[]`)
+- Full context used for evaluation
+
+## Package Structure
+
+```
+experience-sdk/
+├── notes/                  # Personal research (gitignored)
+├── specs/                  # Formal specifications (committed)
+│   └── phase-0-foundation/
+│       ├── spec.md        # What we're building
+│       ├── plan.md        # How we're building it
+│       ├── tasks.md       # GitHub issues breakdown
+│       └── contracts/     # Type contracts
+├── packages/
+│   ├── core/              # @prosdevlab/experience-sdk
+│   │   └── src/
+│   │       ├── types.ts   # All TypeScript types
+│   │       ├── runtime.ts # ExperienceRuntime class
+│   │       └── index.ts   # Exports (singleton + instance)
+│   └── plugins/           # @prosdevlab/experience-sdk-plugins
+│       └── src/
+│           ├── frequency/  # Frequency capping
+│           ├── debug/      # Debug/logging
+│           └── banner/     # Banner rendering
+└── demo/                   # Interactive demo site
+```
+
+## API Design
+
+### Hybrid Pattern (Singleton + Instance)
+Support both simple script tag usage and advanced npm/bundler usage:
+
+```typescript
+// Script tag (singleton)
+experiences.init({ debug: true });
+experiences.register('welcome', { ... });
+
+// npm/bundler (instance)
+import { createInstance } from '@prosdevlab/experience-sdk';
+const exp = createInstance({ debug: true });
+exp.register('welcome', { ... });
+```
+
+### Build Outputs
+- **ESM** (`dist/index.mjs`) - For npm/bundlers
+- **IIFE** (`dist/index.global.js`) - For script tags
+- **TypeScript** (`dist/index.d.ts`) - Type definitions
+
+## Git Workflow
+
+### Commits
+- Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`
+- Reference issues when applicable
+- Keep commits focused and atomic
+
+### Author
+- Name: `prosdevlab`
+- Email: `prosdevlab@gmail.com`
+
+## Tools
+
+- **Package Manager:** pnpm
+- **Monorepo:** Turborepo
+- **Bundler:** tsup
+- **Testing:** Vitest
+- **Linting:** Biome
+- **CI/CD:** GitHub Actions
+
+## Questions?
+
+- Review existing specs in `specs/`
+- Check sdk-kit documentation: https://github.com/Lytics/sdk-kit
+- Refer to implementation plan for detailed guidance
+
