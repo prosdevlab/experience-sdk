@@ -89,28 +89,18 @@ export const debugPlugin: PluginFunction = (plugin, instance, config) => {
   if (isEnabled()) {
     // Listen to experiences:* events
     instance.on('experiences:ready', () => {
+      if (!isEnabled()) return;
       log('SDK initialized and ready');
     });
 
     instance.on('experiences:registered', (payload) => {
+      if (!isEnabled()) return;
       log('Experience registered', payload);
     });
 
     instance.on('experiences:evaluated', (payload) => {
+      if (!isEnabled()) return;
       log('Experience evaluated', payload);
-    });
-
-    // Listen to all events using wildcard
-    instance.on('*', (eventName, ...args) => {
-      // Skip if already logged above
-      if (
-        eventName === 'experiences:ready' ||
-        eventName === 'experiences:registered' ||
-        eventName === 'experiences:evaluated'
-      ) {
-        return;
-      }
-      log(`Event: ${eventName}`, args);
     });
   }
 };
