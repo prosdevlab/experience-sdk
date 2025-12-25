@@ -14,9 +14,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@monorepo/core': resolve(__dirname, 'packages/core/src'),
-      '@monorepo/utils': resolve(__dirname, 'packages/utils/src'),
-      '@monorepo/feature-a': resolve(__dirname, 'packages/feature-a/src'),
+      '@prosdevlab/experience-sdk': resolve(__dirname, 'packages/core/src'),
+      '@prosdevlab/experience-sdk-plugins': resolve(__dirname, 'packages/plugins/src'),
     },
   },
 });
