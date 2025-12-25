@@ -52,6 +52,7 @@ export interface Experience {
     max: number;
     per: 'session' | 'day' | 'week';
   };
+  priority?: number;
 }
 
 /**

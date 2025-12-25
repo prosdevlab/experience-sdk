@@ -211,24 +211,33 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
 
   // Listen to evaluation events and record impressions
   if (isEnabled()) {
-    instance.on('experiences:evaluated', ({ decision }) => {
-      // Only record if experience was shown
-      if (decision.show && decision.experienceId) {
-        // Try to get the 'per' value from our map, fall back to checking the input in trace
-        let per: 'session' | 'day' | 'week' =
-          experienceFrequencyMap.get(decision.experienceId) || 'session';
+    instance.on('experiences:evaluated', (payload: unknown) => {
+      // Handle both single decision and array of decisions
+      const items = Array.isArray(payload) ? payload : [payload];
 
-        // If not in map, try to infer from the decision trace
-        if (!experienceFrequencyMap.has(decision.experienceId)) {
-          const freqStep = decision.trace.find((t: TraceStep) => t.step === 'check-frequency-cap');
-          if (freqStep?.input && typeof freqStep.input === 'object' && 'per' in freqStep.input) {
-            per = (freqStep.input as { per: 'session' | 'day' | 'week' }).per;
-            // Cache it for next time
-            experienceFrequencyMap.set(decision.experienceId, per);
+      for (const item of items) {
+        const decision = item?.decision || item;
+
+        // Only record if experience was shown
+        if (decision?.show && decision.experienceId) {
+          // Try to get the 'per' value from our map, fall back to checking the input in trace
+          let per: 'session' | 'day' | 'week' =
+            experienceFrequencyMap.get(decision.experienceId) || 'session';
+
+          // If not in map, try to infer from the decision trace
+          if (!experienceFrequencyMap.has(decision.experienceId)) {
+            const freqStep = decision.trace.find(
+              (t: TraceStep) => t.step === 'check-frequency-cap'
+            );
+            if (freqStep?.input && typeof freqStep.input === 'object' && 'per' in freqStep.input) {
+              per = (freqStep.input as { per: 'session' | 'day' | 'week' }).per;
+              // Cache it for next time
+              experienceFrequencyMap.set(decision.experienceId, per);
+            }
           }
-        }
 
-        recordImpression(decision.experienceId, per);
+          recordImpression(decision.experienceId, per);
+        }
       }
     });
   }

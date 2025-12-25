@@ -22,6 +22,8 @@ export interface Experience {
   content: ExperienceContent;
   /** Optional frequency capping configuration */
   frequency?: FrequencyConfig;
+  /** Priority for ordering (higher = more important, default: 0) */
+  priority?: number;
 }
 
 /**

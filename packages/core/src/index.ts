@@ -21,6 +21,7 @@ export {
   createInstance,
   destroy,
   evaluate,
+  evaluateAll,
   explain,
   getState,
   init,

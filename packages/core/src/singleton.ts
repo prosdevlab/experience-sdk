@@ -67,6 +67,7 @@ export function register(id: string, experience: Omit<Experience, 'id'>): void {
 
 /**
  * Evaluate experiences against current context
+ * First match wins (use evaluateAll() for multiple experiences)
  *
  * @example
  * ```typescript
@@ -81,6 +82,28 @@ export function register(id: string, experience: Omit<Experience, 'id'>): void {
  */
 export function evaluate(context?: Partial<Context>): Decision {
   return defaultInstance.evaluate(context);
+}
+
+/**
+ * Evaluate all experiences against current context
+ * Returns array of decisions sorted by priority (higher = more important)
+ * All matching experiences will be shown
+ *
+ * @example
+ * ```typescript
+ * import { evaluateAll } from '@prosdevlab/experience-sdk';
+ *
+ * const decisions = evaluateAll({ url: window.location.href });
+ * decisions.forEach(decision => {
+ *   if (decision.show) {
+ *     console.log('Show:', decision.experienceId);
+ *     console.log('Reasons:', decision.reasons);
+ *   }
+ * });
+ * ```
+ */
+export function evaluateAll(context?: Partial<Context>): Decision[] {
+  return defaultInstance.evaluateAll(context);
 }
 
 /**
@@ -160,6 +183,7 @@ export const experiences = {
   init,
   register,
   evaluate,
+  evaluateAll,
   explain,
   getState,
   on,
