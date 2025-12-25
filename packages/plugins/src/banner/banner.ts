@@ -192,17 +192,15 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   });
 
   // Auto-show banner on experiences:evaluated event
-  instance.on('experiences:evaluated', (decision: Decision) => {
-    // Only show if:
-    // 1. Decision says to show
-    // 2. Experience ID exists
-    // 3. Experience type is 'banner'
-    if (decision.show && decision.experienceId) {
-      // We need to find the experience to check its type
-      // For now, we'll assume if a banner-type experience was evaluated and should show,
-      // we'll receive it through another mechanism or the decision will include more info
-      // This is a simplification - in a real implementation, the runtime would need to
-      // pass the full experience object or we'd need to query it
+  instance.on('experiences:evaluated', ({ decision, experience }) => {
+    // Only handle banner-type experiences
+    if (experience?.type === 'banner') {
+      if (decision.show) {
+        show(experience);
+      } else if (activeBanner) {
+        // Hide banner if decision says don't show
+        remove();
+      }
     }
   });
 

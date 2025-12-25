@@ -27,6 +27,7 @@ export class ExperienceRuntime {
   private experiences: Map<string, Experience> = new Map();
   private decisions: Decision[] = [];
   private initialized = false;
+  private destroyed = false;
 
   constructor(config: ExperienceConfig = {}) {
     // Create SDK instance
@@ -49,6 +50,22 @@ export class ExperienceRuntime {
     if (this.initialized) {
       console.warn('[experiences] Already initialized');
       return;
+    }
+
+    // Recreate SDK if it was destroyed
+    if (this.destroyed) {
+      this.sdk = new SDK({
+        name: 'experience-sdk',
+        ...config,
+      });
+
+      // Re-register core plugins
+      this.sdk.use(storagePlugin);
+      this.sdk.use(debugPlugin);
+      this.sdk.use(frequencyPlugin);
+      this.sdk.use(bannerPlugin);
+
+      this.destroyed = false;
     }
 
     if (config) {
@@ -74,6 +91,11 @@ export class ExperienceRuntime {
     const exp: Experience = { id, ...experience };
     this.experiences.set(id, exp);
 
+    // Register frequency config with frequency plugin if it exists
+    if (exp.frequency && (this.sdk as any).frequency?._registerExperience) {
+      (this.sdk as any).frequency._registerExperience(id, exp.frequency.per);
+    }
+
     this.sdk.emit('experiences:registered', { id, experience: exp });
   }
 
@@ -97,6 +119,44 @@ export class ExperienceRuntime {
       allTrace.push(...result.trace);
 
       if (result.matched) {
+        // Check frequency cap if experience has frequency rules
+        if (experience.frequency && (this.sdk as any).frequency) {
+          const freqStart = Date.now();
+          const hasReached = (this.sdk as any).frequency.hasReachedCap(
+            experience.id,
+            experience.frequency.max,
+            experience.frequency.per
+          );
+
+          allTrace.push({
+            step: 'check-frequency-cap',
+            timestamp: freqStart,
+            duration: Date.now() - freqStart,
+            input: experience.frequency,
+            output: hasReached,
+            passed: !hasReached,
+          });
+
+          if (hasReached) {
+            const count = (this.sdk as any).frequency.getImpressionCount(
+              experience.id,
+              experience.frequency.per
+            );
+            allReasons.push(
+              `Frequency cap reached (${count}/${experience.frequency.max} this ${experience.frequency.per})`
+            );
+            continue; // Skip this experience, check next
+          }
+
+          const count = (this.sdk as any).frequency.getImpressionCount(
+            experience.id,
+            experience.frequency.per
+          );
+          allReasons.push(
+            `Frequency cap not reached (${count}/${experience.frequency.max} this ${experience.frequency.per})`
+          );
+        }
+
         matchedExperience = experience;
         break; // First match wins
       }
@@ -118,8 +178,11 @@ export class ExperienceRuntime {
     // Store decision for inspection
     this.decisions.push(decision);
 
-    // Emit for plugins to react
-    this.sdk.emit('experiences:evaluated', decision);
+    // Emit for plugins to react (include matched experience for rendering)
+    this.sdk.emit('experiences:evaluated', {
+      decision,
+      experience: matchedExperience,
+    });
 
     return decision;
   }
@@ -158,7 +221,7 @@ export class ExperienceRuntime {
       initialized: this.initialized,
       experiences: new Map(this.experiences),
       decisions: [...this.decisions],
-      config: this.sdk.getAll(),
+      config: this.sdk ? this.sdk.getAll() : {},
     };
   }
 
@@ -173,7 +236,10 @@ export class ExperienceRuntime {
    * Destroy runtime
    */
   async destroy(): Promise<void> {
-    await this.sdk.destroy();
+    if (this.sdk) {
+      await this.sdk.destroy();
+    }
+    this.destroyed = true;
     this.experiences.clear();
     this.decisions = [];
     this.initialized = false;
@@ -227,22 +293,6 @@ export function evaluateExperience(
       reasons.push('URL does not match targeting rule');
       matched = false;
     }
-  }
-
-  // Evaluate frequency rule (will be checked by frequency plugin)
-  if (experience.frequency) {
-    const freqStart = Date.now();
-    // Note: Actual frequency checking is done by the frequency plugin
-    // This just records that a frequency rule exists
-    trace.push({
-      step: 'check-frequency-rule',
-      timestamp: freqStart,
-      duration: Date.now() - freqStart,
-      input: experience.frequency,
-      output: true,
-      passed: true,
-    });
-    reasons.push('Frequency rule will be checked by frequency plugin');
   }
 
   return { matched, reasons, trace };

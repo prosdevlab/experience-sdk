@@ -7,7 +7,7 @@
 
 import type { PluginFunction, SDK } from '@lytics/sdk-kit';
 import { type StoragePlugin, storagePlugin } from '@lytics/sdk-kit-plugins';
-import type { Decision } from '../types';
+import type { TraceStep } from '../types';
 
 export interface FrequencyPluginConfig {
   frequency?: {
@@ -26,6 +26,7 @@ interface ImpressionData {
   count: number;
   lastImpression: number;
   impressions: number[];
+  per?: 'session' | 'day' | 'week'; // Track which storage type this uses
 }
 
 /**
@@ -54,6 +55,9 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
     },
   });
 
+  // Track experience frequency configs
+  const experienceFrequencyMap = new Map<string, 'session' | 'day' | 'week'>();
+
   // Auto-load storage plugin if not already loaded
   if (!(instance as SDK & { storage?: StoragePlugin }).storage) {
     instance.use(storagePlugin);
@@ -62,31 +66,52 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   const isEnabled = (): boolean => config.get('frequency.enabled') ?? true;
   const getNamespace = (): string => config.get('frequency.namespace') ?? 'experiences:frequency';
 
+  // Helper to get the right storage backend based on frequency type
+  const getStorageBackend = (per: 'session' | 'day' | 'week'): Storage => {
+    return per === 'session' ? sessionStorage : localStorage;
+  };
+
   // Helper to get storage key
   const getStorageKey = (experienceId: string): string => {
     return `${getNamespace()}:${experienceId}`;
   };
 
   // Helper to get impression data
-  const getImpressionData = (experienceId: string): ImpressionData => {
-    const storage = (instance as SDK & { storage: StoragePlugin }).storage;
-    const data = storage.get(getStorageKey(experienceId)) as ImpressionData | null;
+  const getImpressionData = (
+    experienceId: string,
+    per: 'session' | 'day' | 'week'
+  ): ImpressionData => {
+    const storage = getStorageBackend(per);
+    const key = getStorageKey(experienceId);
+    const raw = storage.getItem(key);
 
-    if (!data) {
+    if (!raw) {
       return {
         count: 0,
         lastImpression: 0,
         impressions: [],
+        per,
       };
     }
 
-    return data;
+    try {
+      return JSON.parse(raw) as ImpressionData;
+    } catch {
+      return {
+        count: 0,
+        lastImpression: 0,
+        impressions: [],
+        per,
+      };
+    }
   };
 
   // Helper to save impression data
   const saveImpressionData = (experienceId: string, data: ImpressionData): void => {
-    const storage = (instance as SDK & { storage: StoragePlugin }).storage;
-    storage.set(getStorageKey(experienceId), data);
+    const per = data.per || 'session'; // Default to session if not specified
+    const storage = getStorageBackend(per);
+    const key = getStorageKey(experienceId);
+    storage.setItem(key, JSON.stringify(data));
   };
 
   // Get time window in milliseconds
@@ -104,9 +129,12 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   /**
    * Get impression count for an experience
    */
-  const getImpressionCount = (experienceId: string): number => {
+  const getImpressionCount = (
+    experienceId: string,
+    per: 'session' | 'day' | 'week' = 'session'
+  ): number => {
     if (!isEnabled()) return 0;
-    const data = getImpressionData(experienceId);
+    const data = getImpressionData(experienceId, per);
     return data.count;
   };
 
@@ -120,7 +148,7 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   ): boolean => {
     if (!isEnabled()) return false;
 
-    const data = getImpressionData(experienceId);
+    const data = getImpressionData(experienceId, per);
     const timeWindow = getTimeWindow(per);
     const now = Date.now();
 
@@ -138,16 +166,20 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   /**
    * Record an impression for an experience
    */
-  const recordImpression = (experienceId: string): void => {
+  const recordImpression = (
+    experienceId: string,
+    per: 'session' | 'day' | 'week' = 'session'
+  ): void => {
     if (!isEnabled()) return;
 
-    const data = getImpressionData(experienceId);
+    const data = getImpressionData(experienceId, per);
     const now = Date.now();
 
     // Update count and add timestamp
     data.count += 1;
     data.lastImpression = now;
     data.impressions.push(now);
+    data.per = per; // Store the frequency type
 
     // Keep only recent impressions (last 7 days)
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -170,15 +202,38 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
       getImpressionCount,
       hasReachedCap,
       recordImpression,
+      // Internal method to register experience frequency config
+      _registerExperience: (experienceId: string, per: 'session' | 'day' | 'week') => {
+        experienceFrequencyMap.set(experienceId, per);
+      },
     },
   });
 
   // Listen to evaluation events and record impressions
   if (isEnabled()) {
-    instance.on('experiences:evaluated', (decision: Decision) => {
+    instance.on('experiences:evaluated', ({ decision }) => {
       // Only record if experience was shown
       if (decision.show && decision.experienceId) {
-        recordImpression(decision.experienceId);
+        // Try to get the 'per' value from our map, fall back to checking the input in trace
+        let per: 'session' | 'day' | 'week' =
+          experienceFrequencyMap.get(decision.experienceId) || 'session';
+
+        // If not in map, try to infer from the decision trace
+        if (!experienceFrequencyMap.has(decision.experienceId)) {
+          const freqStep = decision.trace.find((t: TraceStep) => t.step === 'check-frequency-cap');
+          if (
+            freqStep &&
+            freqStep.input &&
+            typeof freqStep.input === 'object' &&
+            'per' in freqStep.input
+          ) {
+            per = (freqStep.input as any).per;
+            // Cache it for next time
+            experienceFrequencyMap.set(decision.experienceId, per);
+          }
+        }
+
+        recordImpression(decision.experienceId, per);
       }
     });
   }

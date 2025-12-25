@@ -340,6 +340,98 @@ describe('Banner Plugin', () => {
       });
     });
 
+    it('should auto-render banner on experiences:evaluated event', () => {
+      const experience: Experience = {
+        id: 'auto-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          title: 'Auto Banner',
+          message: 'Auto message',
+        },
+      };
+
+      // Emit the event that runtime would emit
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'auto-banner',
+          reasons: ['test'],
+          trace: [],
+          context: {},
+          metadata: { evaluatedAt: Date.now(), totalDuration: 0, experiencesEvaluated: 1 },
+        },
+        experience,
+      });
+
+      // Banner should be automatically rendered
+      const banner = document.querySelector('[data-experience-id="auto-banner"]');
+      expect(banner).toBeTruthy();
+      expect(banner?.textContent).toContain('Auto Banner');
+    });
+
+    it('should auto-hide banner when decision is false', () => {
+      const experience: Experience = {
+        id: 'hide-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          title: 'Hide Test',
+          message: 'Will hide',
+        },
+      };
+
+      // First show the banner
+      sdk.banner.show(experience);
+      expect(sdk.banner.isShowing()).toBe(true);
+
+      // Emit event with show: false
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: false,
+          experienceId: 'hide-banner',
+          reasons: ['Frequency cap reached'],
+          trace: [],
+          context: {},
+          metadata: { evaluatedAt: Date.now(), totalDuration: 0, experiencesEvaluated: 1 },
+        },
+        experience,
+      });
+
+      // Banner should be removed
+      expect(sdk.banner.isShowing()).toBe(false);
+      expect(document.querySelector('[data-experience-id="hide-banner"]')).toBeNull();
+    });
+
+    it('should only handle banner-type experiences', () => {
+      const modalExperience = {
+        id: 'modal',
+        type: 'modal' as const,
+        targeting: {},
+        content: {
+          title: 'Modal',
+          body: 'Modal content',
+        },
+      };
+
+      // Emit event with modal type
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'modal',
+          reasons: ['test'],
+          trace: [],
+          context: {},
+          metadata: { evaluatedAt: Date.now(), totalDuration: 0, experiencesEvaluated: 1 },
+        },
+        experience: modalExperience,
+      });
+
+      // Banner should NOT be rendered
+      expect(document.querySelector('[data-experience-id="modal"]')).toBeNull();
+      expect(sdk.banner.isShowing()).toBe(false);
+    });
+
     it('should remove banner on destroy event', async () => {
       const experience: Experience = {
         id: 'test-banner',
