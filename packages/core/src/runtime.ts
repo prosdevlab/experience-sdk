@@ -1,4 +1,6 @@
 import { SDK } from '@lytics/sdk-kit';
+import { storagePlugin } from '@lytics/sdk-kit-plugins';
+import { bannerPlugin, debugPlugin, frequencyPlugin } from '@prosdevlab/experience-sdk-plugins';
 import type {
   Context,
   Decision,
@@ -32,6 +34,12 @@ export class ExperienceRuntime {
       name: 'experience-sdk',
       ...config,
     });
+
+    // Auto-register plugins
+    this.sdk.use(storagePlugin);
+    this.sdk.use(debugPlugin);
+    this.sdk.use(frequencyPlugin);
+    this.sdk.use(bannerPlugin);
   }
 
   /**
@@ -263,4 +271,3 @@ export function evaluateUrlRule(rule: UrlRule, url: string = ''): boolean {
   // No rules specified = match all
   return true;
 }
-

@@ -6,7 +6,7 @@
  */
 
 import type { PluginFunction } from '@lytics/sdk-kit';
-import type { Experience, BannerContent, Decision } from '@prosdevlab/experience-sdk';
+import type { BannerContent, Decision, Experience } from '../types';
 
 export interface BannerPluginConfig {
   banner?: {
@@ -211,4 +211,3 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
     remove();
   });
 };
-

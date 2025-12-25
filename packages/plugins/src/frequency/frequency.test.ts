@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SDK } from '@lytics/sdk-kit';
-import { storagePlugin, type StoragePlugin } from '@lytics/sdk-kit-plugins';
-import { frequencyPlugin, type FrequencyPlugin } from './frequency';
-import type { Decision } from '@prosdevlab/experience-sdk';
+import { type StoragePlugin, storagePlugin } from '@lytics/sdk-kit-plugins';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Decision } from '../types';
+import { type FrequencyPlugin, frequencyPlugin } from './frequency';
 
 type SDKWithFrequency = SDK & { frequency: FrequencyPlugin; storage: StoragePlugin };
 
@@ -349,4 +349,3 @@ describe('Frequency Plugin', () => {
     });
   });
 });
-

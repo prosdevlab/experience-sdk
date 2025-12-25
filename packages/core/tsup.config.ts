@@ -11,6 +11,6 @@ export default defineConfig({
   minify: true,
   outDir: 'dist',
   globalName: 'experiences',
-  // Bundle sdk-kit for IIFE (script tag)
-  noExternal: ['@lytics/sdk-kit'],
+  // Bundle dependencies for IIFE (script tag)
+  noExternal: ['@lytics/sdk-kit', '@lytics/sdk-kit-plugins', '@prosdevlab/experience-sdk-plugins'],
 });

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SDK } from '@lytics/sdk-kit';
-import { debugPlugin, type DebugPlugin } from './debug';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type DebugPlugin, debugPlugin } from './debug';
 
 describe('Debug Plugin', () => {
   let sdk: SDK & { debug: DebugPlugin };
@@ -129,10 +129,7 @@ describe('Debug Plugin', () => {
       sdk.use(debugPlugin);
       sdk.emit('experiences:ready');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[experiences] SDK initialized and ready',
-        ''
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('[experiences] SDK initialized and ready', '');
 
       consoleSpy.mockRestore();
     });
@@ -144,10 +141,7 @@ describe('Debug Plugin', () => {
       const payload = { id: 'test', experience: { type: 'banner' } };
       sdk.emit('experiences:registered', payload);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[experiences] Experience registered',
-        payload
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('[experiences] Experience registered', payload);
 
       consoleSpy.mockRestore();
     });
@@ -234,4 +228,3 @@ describe('Debug Plugin', () => {
     });
   });
 });
-

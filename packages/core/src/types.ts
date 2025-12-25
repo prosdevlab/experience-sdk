@@ -251,4 +251,3 @@ export interface RuntimeState {
   /** Current configuration */
   config: ExperienceConfig;
 }
-

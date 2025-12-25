@@ -1,6 +1,7 @@
+// biome-ignore lint/suspicious/noExplicitAny: intentional use of any in public API
 /**
  * Type Contracts for Experience SDK
- * 
+ *
  * These types define the public API surface and should remain stable.
  * Breaking changes to these types require a major version bump.
  */
@@ -84,16 +85,16 @@ export interface UserContext {
 export interface Decision {
   show: boolean;
   experienceId?: string;
-  reasons: string[];           // Human-readable: ["✅ URL matches", ...]
-  trace: TraceStep[];          // Machine-readable trace
-  context: Context;            // Input context used
+  reasons: string[]; // Human-readable: ["✅ URL matches", ...]
+  trace: TraceStep[]; // Machine-readable trace
+  context: Context; // Input context used
   metadata: DecisionMetadata;
 }
 
 export interface TraceStep {
-  step: string;                // e.g., "evaluate-url-rule"
+  step: string; // e.g., "evaluate-url-rule"
   timestamp: number;
-  duration: number;            // milliseconds
+  duration: number; // milliseconds
   input?: any;
   output?: any;
   passed: boolean;
@@ -123,4 +124,3 @@ export interface RuntimeState {
   decisions: Decision[];
   config: ExperienceConfig;
 }
-

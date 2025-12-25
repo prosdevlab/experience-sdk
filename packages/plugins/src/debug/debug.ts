@@ -104,4 +104,3 @@ export const debugPlugin: PluginFunction = (plugin, instance, config) => {
     });
   }
 };
-

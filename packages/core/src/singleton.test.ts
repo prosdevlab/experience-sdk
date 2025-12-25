@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createInstance,
-  init,
-  register,
+  destroy,
   evaluate,
+  experiences as experiencesDefault,
   explain,
   getState,
+  init,
   on,
-  destroy,
-  experiences as experiencesDefault,
+  register,
 } from './singleton';
 
 describe('Export Pattern', () => {
@@ -234,4 +234,3 @@ describe('Export Pattern', () => {
     });
   });
 });
-

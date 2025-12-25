@@ -6,7 +6,7 @@
  */
 
 import { ExperienceRuntime } from './runtime';
-import type { ExperienceConfig, Experience, Context, Decision, RuntimeState } from './types';
+import type { Context, Decision, Experience, ExperienceConfig, RuntimeState } from './types';
 
 /**
  * Create a new Experience SDK instance
@@ -174,4 +174,3 @@ export const experiences = {
 if (typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).experiences = experiences;
 }
-

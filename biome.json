@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
@@ -30,7 +30,9 @@
     {
       "includes": [
         "packages/core/src/types.ts",
-        "packages/core/src/runtime.ts"
+        "packages/core/src/runtime.ts",
+        "packages/plugins/src/types.ts",
+        "specs/**/contracts/types.ts"
       ],
       "linter": {
         "rules": {
