@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@lytics/sdk-kit": "^0.1.1",
+    "@lytics/sdk-kit-plugins": "^0.1.0",
     "@prosdevlab/experience-sdk": "workspace:*"
   },
   "devDependencies": {

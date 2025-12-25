@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SDK } from '@lytics/sdk-kit';
-import { debugPlugin } from './debug';
+import { debugPlugin, type DebugPlugin } from './debug';
 
 describe('Debug Plugin', () => {
-  let sdk: SDK;
+  let sdk: SDK & { debug: DebugPlugin };
 
   beforeEach(() => {
-    sdk = new SDK({ debug: { enabled: true, console: true, window: true } });
+    sdk = new SDK({ debug: { enabled: true, console: true, window: true } }) as SDK & {
+      debug: DebugPlugin;
+    };
   });
 
   describe('Plugin Registration', () => {

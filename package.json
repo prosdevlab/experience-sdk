@@ -47,5 +47,8 @@
   "volta": {
     "node": "24.12.0",
     "pnpm": "10.26.2"
+  },
+  "dependencies": {
+    "@lytics/sdk-kit-plugins": "0.1.2"
   }
 }
