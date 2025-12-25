@@ -6,3 +6,4 @@
 
 export * from './debug';
 export * from './frequency';
+export * from './banner';
