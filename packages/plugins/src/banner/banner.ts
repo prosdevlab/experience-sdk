@@ -241,14 +241,22 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   });
 
   // Auto-show banner on experiences:evaluated event
-  instance.on('experiences:evaluated', ({ decision, experience }) => {
-    // Only handle banner-type experiences
-    if (experience?.type === 'banner') {
-      if (decision.show) {
-        show(experience);
-      } else if (activeBanner) {
-        // Hide banner if decision says don't show
-        remove();
+  instance.on('experiences:evaluated', (payload: unknown) => {
+    // Handle both single decision and array of decisions
+    const items = Array.isArray(payload) ? payload : [payload];
+
+    for (const item of items) {
+      const decision = item?.decision || item;
+      const experience = item?.experience;
+
+      // Only handle banner-type experiences
+      if (experience?.type === 'banner') {
+        if (decision?.show) {
+          show(experience);
+        } else if (activeBanner) {
+          // Hide banner if decision says don't show
+          remove();
+        }
       }
     }
   });

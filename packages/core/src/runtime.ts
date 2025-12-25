@@ -102,6 +102,7 @@ export class ExperienceRuntime {
   /**
    * Evaluate experiences against context
    * Returns decision with explainability
+   * First match wins (use evaluateAll() for multiple experiences)
    */
   evaluate(context?: Partial<Context>): Decision {
     const startTime = Date.now();
@@ -185,6 +186,106 @@ export class ExperienceRuntime {
     });
 
     return decision;
+  }
+
+  /**
+   * Evaluate all experiences against context
+   * Returns multiple decisions (sorted by priority)
+   * All matching experiences will be shown
+   */
+  evaluateAll(context?: Partial<Context>): Decision[] {
+    const evalContext = buildContext(context);
+
+    // Sort experiences by priority (higher = more important)
+    // Ties maintain registration order (Map preserves insertion order)
+    const sortedExperiences = Array.from(this.experiences.values()).sort((a, b) => {
+      const priorityA = a.priority ?? 0;
+      const priorityB = b.priority ?? 0;
+      return priorityB - priorityA; // Descending order
+    });
+
+    const decisions: Decision[] = [];
+
+    // Evaluate each experience
+    for (const experience of sortedExperiences) {
+      const expStartTime = Date.now();
+      const result = evaluateExperience(experience, evalContext);
+
+      let show = result.matched;
+      const reasons = [...result.reasons];
+      const trace = [...result.trace];
+
+      // Check frequency cap if experience has frequency rules
+      if (show && experience.frequency && (this.sdk as any).frequency) {
+        const freqStart = Date.now();
+        const hasReached = (this.sdk as any).frequency.hasReachedCap(
+          experience.id,
+          experience.frequency.max,
+          experience.frequency.per
+        );
+
+        trace.push({
+          step: 'check-frequency-cap',
+          timestamp: freqStart,
+          duration: Date.now() - freqStart,
+          input: experience.frequency,
+          output: hasReached,
+          passed: !hasReached,
+        });
+
+        if (hasReached) {
+          const count = (this.sdk as any).frequency.getImpressionCount(
+            experience.id,
+            experience.frequency.per
+          );
+          reasons.push(
+            `Frequency cap reached (${count}/${experience.frequency.max} this ${experience.frequency.per})`
+          );
+          show = false;
+        } else {
+          const count = (this.sdk as any).frequency.getImpressionCount(
+            experience.id,
+            experience.frequency.per
+          );
+          reasons.push(
+            `Frequency cap not reached (${count}/${experience.frequency.max} this ${experience.frequency.per})`
+          );
+        }
+      }
+
+      const decision: Decision = {
+        show,
+        experienceId: experience.id,
+        reasons,
+        trace,
+        context: evalContext,
+        metadata: {
+          evaluatedAt: Date.now(),
+          totalDuration: Date.now() - expStartTime,
+          experiencesEvaluated: 1,
+        },
+      };
+
+      decisions.push(decision);
+      this.decisions.push(decision);
+    }
+
+    // Emit single event with all decisions (array)
+    // Plugins can filter to their relevant experiences
+    const matchedDecisions = decisions.filter((d) => d.show);
+    const matchedExperiences = matchedDecisions
+      .map((d) => d.experienceId && this.experiences.get(d.experienceId))
+      .filter((exp): exp is Experience => exp !== undefined);
+
+    this.sdk.emit(
+      'experiences:evaluated',
+      matchedDecisions.map((decision, index) => ({
+        decision,
+        experience: matchedExperiences[index],
+      }))
+    );
+
+    return decisions;
   }
 
   /**

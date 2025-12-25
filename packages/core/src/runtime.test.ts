@@ -483,4 +483,206 @@ describe('ExperienceRuntime', () => {
       expect(decision.show).toBe(true);
     });
   });
+
+  describe('evaluateAll()', () => {
+    beforeEach(async () => {
+      await runtime.init();
+    });
+
+    it('should return decisions for all matching experiences', () => {
+      runtime.register('banner1', {
+        type: 'banner',
+        targeting: { url: { contains: '/' } },
+        content: { title: 'Banner 1', message: 'Message 1' },
+      });
+
+      runtime.register('banner2', {
+        type: 'banner',
+        targeting: { url: { contains: '/' } },
+        content: { title: 'Banner 2', message: 'Message 2' },
+      });
+
+      runtime.register('banner3', {
+        type: 'banner',
+        targeting: { url: { contains: '/nonexistent' } },
+        content: { title: 'Banner 3', message: 'Message 3' },
+      });
+
+      const decisions = runtime.evaluateAll({ url: 'https://example.com/' });
+
+      expect(decisions).toHaveLength(3);
+      expect(decisions.filter((d) => d.show)).toHaveLength(2);
+      expect(decisions[0].experienceId).toBe('banner1');
+      expect(decisions[1].experienceId).toBe('banner2');
+      expect(decisions[2].experienceId).toBe('banner3');
+      expect(decisions[2].show).toBe(false);
+    });
+
+    it('should sort experiences by priority (descending)', () => {
+      runtime.register('low', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Low', message: 'Low priority' },
+        priority: 10,
+      });
+
+      runtime.register('high', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'High', message: 'High priority' },
+        priority: 100,
+      });
+
+      runtime.register('medium', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Medium', message: 'Medium priority' },
+        priority: 50,
+      });
+
+      const decisions = runtime.evaluateAll();
+
+      expect(decisions[0].experienceId).toBe('high'); // 100
+      expect(decisions[1].experienceId).toBe('medium'); // 50
+      expect(decisions[2].experienceId).toBe('low'); // 10
+    });
+
+    it('should maintain registration order for tied priorities', () => {
+      runtime.register('first', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'First', message: 'First registered' },
+        priority: 50,
+      });
+
+      runtime.register('second', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Second', message: 'Second registered' },
+        priority: 50,
+      });
+
+      runtime.register('third', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Third', message: 'Third registered' },
+        priority: 50,
+      });
+
+      const decisions = runtime.evaluateAll();
+
+      expect(decisions[0].experienceId).toBe('first');
+      expect(decisions[1].experienceId).toBe('second');
+      expect(decisions[2].experienceId).toBe('third');
+    });
+
+    it('should default to priority 0 when not specified', () => {
+      runtime.register('no-priority', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'No Priority', message: 'No priority set' },
+      });
+
+      runtime.register('with-priority', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'With Priority', message: 'Priority set' },
+        priority: 1,
+      });
+
+      const decisions = runtime.evaluateAll();
+
+      // with-priority (1) should come before no-priority (0)
+      expect(decisions[0].experienceId).toBe('with-priority');
+      expect(decisions[1].experienceId).toBe('no-priority');
+    });
+
+    it('should check frequency caps for each experience', () => {
+      runtime.register('capped', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Capped', message: 'Has frequency cap' },
+        frequency: { max: 1, per: 'session' },
+      });
+
+      runtime.register('unlimited', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Unlimited', message: 'No frequency cap' },
+      });
+
+      // First evaluation: both show
+      const decisions1 = runtime.evaluateAll();
+      expect(decisions1.filter((d) => d.show)).toHaveLength(2);
+
+      // Second evaluation: only unlimited shows (capped reached limit)
+      const decisions2 = runtime.evaluateAll();
+      expect(decisions2.filter((d) => d.show)).toHaveLength(1);
+      expect(decisions2.find((d) => d.experienceId === 'unlimited')?.show).toBe(true);
+      expect(decisions2.find((d) => d.experienceId === 'capped')?.show).toBe(false);
+    });
+
+    it('should emit experiences:evaluated event with array', () => {
+      const handler = vi.fn();
+      runtime.on('experiences:evaluated', handler);
+
+      runtime.register('banner1', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Banner 1', message: 'Message 1' },
+      });
+
+      runtime.register('banner2', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Banner 2', message: 'Message 2' },
+      });
+
+      runtime.evaluateAll();
+
+      expect(handler).toHaveBeenCalledOnce();
+      expect(handler).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            decision: expect.objectContaining({ experienceId: 'banner1' }),
+            experience: expect.objectContaining({ id: 'banner1' }),
+          }),
+          expect.objectContaining({
+            decision: expect.objectContaining({ experienceId: 'banner2' }),
+            experience: expect.objectContaining({ id: 'banner2' }),
+          }),
+        ])
+      );
+    });
+
+    it('should only emit matched experiences in event', () => {
+      const handler = vi.fn();
+      runtime.on('experiences:evaluated', handler);
+
+      runtime.register('match', {
+        type: 'banner',
+        targeting: { url: { contains: '/' } },
+        content: { title: 'Match', message: 'Matches' },
+      });
+
+      runtime.register('no-match', {
+        type: 'banner',
+        targeting: { url: { contains: '/nonexistent' } },
+        content: { title: 'No Match', message: 'Does not match' },
+      });
+
+      runtime.evaluateAll({ url: 'https://example.com/' });
+
+      expect(handler).toHaveBeenCalledOnce();
+      const emittedDecisions = handler.mock.calls[0][0];
+      expect(emittedDecisions).toHaveLength(1);
+      expect(emittedDecisions[0].decision.experienceId).toBe('match');
+    });
+
+    it('should return empty array when no experiences registered', () => {
+      const decisions = runtime.evaluateAll();
+
+      expect(decisions).toEqual([]);
+    });
+  });
 });
