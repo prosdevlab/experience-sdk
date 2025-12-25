@@ -151,14 +151,22 @@ interface Decision {
 - ✅ Extract testable pure functions
 - ✅ Include acceptance criteria in commits
 - ✅ Use sdk-kit capabilities where available
+- ✅ Use `any` intentionally in public APIs (like sdk-kit does)
 
 **DON'T:**
 - ❌ Commit without running tests and linter
 - ❌ Skip type definitions for public APIs
 - ❌ Build what already exists in sdk-kit
 - ❌ Create complex stateful classes when pure functions suffice
-- ❌ Use `any` in public APIs
+- ❌ Use `any` in internal implementation (only in public APIs)
 - ❌ Commit changes without updating relevant specs
+
+**About `any` Types:**
+Following sdk-kit's pattern, `any` is intentionally used in public API files (types.ts) for:
+- Config values, event payloads, custom user data
+- Better developer experience and API flexibility
+- Biome configured to allow `any` in specific files only
+- Internal implementation should use specific types
 
 ## Project Structure
 

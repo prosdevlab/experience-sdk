@@ -61,6 +61,16 @@ If we build something generic that could benefit other sdk-kit users, design it 
 - Prefer pure functions for testability
 - Extract logic into pure functions when possible
 
+#### Use of `any`
+Following sdk-kit's pattern, `any` is intentionally used in **public API surfaces** only:
+- **Public API files** (types.ts, runtime.ts): `any` allowed for flexibility
+  - Config values, event payloads, custom user data
+  - Provides better developer experience
+- **Internal implementation**: Avoid `any`, use specific types
+- **Test files**: `any` allowed for mocks/fixtures
+- **Biome config**: `noExplicitAny` set to `"warn"` globally, `"off"` for specific files
+- This is a conscious trade-off: type safety vs. API flexibility
+
 ### Testing
 - Unit tests for all functionality
 - >80% coverage minimum
