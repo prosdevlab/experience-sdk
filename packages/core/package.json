@@ -42,7 +42,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@lytics/sdk-kit": "^0.1.1"
+    "@lytics/sdk-kit": "^0.1.1",
+    "@lytics/sdk-kit-plugins": "^0.1.2",
+    "@prosdevlab/experience-sdk-plugins": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

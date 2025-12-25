@@ -93,17 +93,17 @@ describe('ExperienceRuntime', () => {
     });
 
     it('should allow multiple experiences', () => {
-        runtime.register('exp1', {
-          type: 'banner',
-          targeting: {},
-          content: { title: 'Exp 1', message: 'Message 1' },
-        });
+      runtime.register('exp1', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Exp 1', message: 'Message 1' },
+      });
 
-        runtime.register('exp2', {
-          type: 'banner',
-          targeting: {},
-          content: { title: 'Exp 2', message: 'Message 2' },
-        });
+      runtime.register('exp2', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Exp 2', message: 'Message 2' },
+      });
 
       const state = runtime.getState();
       expect(state.experiences.size).toBe(2);
@@ -112,13 +112,13 @@ describe('ExperienceRuntime', () => {
 
   describe('evaluate()', () => {
     beforeEach(() => {
-        runtime.register('test', {
-          type: 'banner',
-          targeting: {
-            url: { contains: '/products' },
-          },
-          content: { title: 'Test', message: 'Test message' },
-        });
+      runtime.register('test', {
+        type: 'banner',
+        targeting: {
+          url: { contains: '/products' },
+        },
+        content: { title: 'Test', message: 'Test message' },
+      });
     });
 
     it('should return decision with matched experience', () => {
@@ -199,13 +199,13 @@ describe('ExperienceRuntime', () => {
     });
 
     it('should match first experience only', () => {
-        runtime.register('test2', {
-          type: 'banner',
-          targeting: {
-            url: { contains: '/products' },
-          },
-          content: { title: 'Test 2', message: 'Test 2 message' },
-        });
+      runtime.register('test2', {
+        type: 'banner',
+        targeting: {
+          url: { contains: '/products' },
+        },
+        content: { title: 'Test 2', message: 'Test 2 message' },
+      });
 
       const decision = runtime.evaluate({
         url: 'https://example.com/products',
@@ -218,13 +218,13 @@ describe('ExperienceRuntime', () => {
 
   describe('explain()', () => {
     it('should explain specific experience', () => {
-        runtime.register('test', {
-          type: 'banner',
-          targeting: {
-            url: { contains: '/test' },
-          },
-          content: { title: 'Test', message: 'Test message' },
-        });
+      runtime.register('test', {
+        type: 'banner',
+        targeting: {
+          url: { contains: '/test' },
+        },
+        content: { title: 'Test', message: 'Test message' },
+      });
 
       const explanation = runtime.explain('test');
 
@@ -286,12 +286,12 @@ describe('ExperienceRuntime', () => {
 
   describe('destroy()', () => {
     it('should clean up runtime', async () => {
-        await runtime.init();
-        runtime.register('test', {
-          type: 'banner',
-          targeting: {},
-          content: { title: 'Test', message: 'Test message' },
-        });
+      await runtime.init();
+      runtime.register('test', {
+        type: 'banner',
+        targeting: {},
+        content: { title: 'Test', message: 'Test message' },
+      });
 
       await runtime.destroy();
 
@@ -398,26 +398,22 @@ describe('ExperienceRuntime', () => {
 
   describe('evaluateUrlRule', () => {
     it('should match with equals rule', () => {
-      expect(evaluateUrlRule({ equals: 'https://example.com' }, 'https://example.com')).toBe(
-        true
-      );
+      expect(evaluateUrlRule({ equals: 'https://example.com' }, 'https://example.com')).toBe(true);
       expect(evaluateUrlRule({ equals: 'https://example.com' }, 'https://other.com')).toBe(false);
     });
 
     it('should match with contains rule', () => {
-      expect(evaluateUrlRule({ contains: '/products' }, 'https://example.com/products')).toBe(
-        true
-      );
+      expect(evaluateUrlRule({ contains: '/products' }, 'https://example.com/products')).toBe(true);
       expect(evaluateUrlRule({ contains: '/products' }, 'https://example.com/about')).toBe(false);
     });
 
     it('should match with regex rule', () => {
-      expect(evaluateUrlRule({ matches: /\/product\/\d+/ }, 'https://example.com/product/123')).toBe(
-        true
-      );
-      expect(evaluateUrlRule({ matches: /\/product\/\d+/ }, 'https://example.com/product/abc')).toBe(
-        false
-      );
+      expect(
+        evaluateUrlRule({ matches: /\/product\/\d+/ }, 'https://example.com/product/123')
+      ).toBe(true);
+      expect(
+        evaluateUrlRule({ matches: /\/product\/\d+/ }, 'https://example.com/product/abc')
+      ).toBe(false);
     });
 
     it('should return true for empty rule', () => {
@@ -465,4 +461,3 @@ describe('ExperienceRuntime', () => {
     });
   });
 });
-

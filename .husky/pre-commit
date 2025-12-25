@@ -3,12 +3,24 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# Lint and format staged files
-echo "📝 Linting and formatting..."
-pnpm lint-staged
+# Build packages first (needed for typecheck due to workspace dependencies)
+echo "🔨 Building packages..."
+pnpm build > /dev/null 2>&1
+
+# Get staged files
+files=$(git diff --cached --name-only --diff-filter=ACMR "*.ts" "*.tsx" "*.js" "*.jsx" | xargs)
+
+if [ -n "$files" ]; then
+  echo "📝 Linting and formatting staged files..."
+  pnpm lint-staged $files
+  git add $files
+fi
 
 # Type check entire project
 echo "🔎 Type checking..."
 pnpm typecheck
+
+# Clean up dist files (they shouldn't be committed)
+rm -rf packages/*/dist
 
 echo "✅ Pre-commit checks passed!"

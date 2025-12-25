@@ -4,4 +4,3 @@
 
 export type { BannerPlugin, BannerPluginConfig } from './banner';
 export { bannerPlugin } from './banner';
-

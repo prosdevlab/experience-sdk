@@ -6,8 +6,8 @@
  */
 
 import type { PluginFunction, SDK } from '@lytics/sdk-kit';
-import { storagePlugin, type StoragePlugin } from '@lytics/sdk-kit-plugins';
-import type { Decision } from '@prosdevlab/experience-sdk';
+import { type StoragePlugin, storagePlugin } from '@lytics/sdk-kit-plugins';
+import type { Decision } from '../types';
 
 export interface FrequencyPluginConfig {
   frequency?: {
@@ -71,7 +71,7 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   const getImpressionData = (experienceId: string): ImpressionData => {
     const storage = (instance as SDK & { storage: StoragePlugin }).storage;
     const data = storage.get(getStorageKey(experienceId)) as ImpressionData | null;
-    
+
     if (!data) {
       return {
         count: 0,
@@ -79,7 +79,7 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
         impressions: [],
       };
     }
-    
+
     return data;
   };
 
@@ -119,7 +119,7 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
     per: 'session' | 'day' | 'week'
   ): boolean => {
     if (!isEnabled()) return false;
-    
+
     const data = getImpressionData(experienceId);
     const timeWindow = getTimeWindow(per);
     const now = Date.now();
@@ -130,9 +130,7 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
     }
 
     // For time-based caps, count impressions within the window
-    const recentImpressions = data.impressions.filter(
-      (timestamp) => now - timestamp < timeWindow
-    );
+    const recentImpressions = data.impressions.filter((timestamp) => now - timestamp < timeWindow);
 
     return recentImpressions.length >= max;
   };
@@ -185,4 +183,3 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
     });
   }
 };
-

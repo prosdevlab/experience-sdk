@@ -5,31 +5,13 @@
  * built on @lytics/sdk-kit.
  */
 
-// Export all types
-export type {
-  Experience,
-  TargetingRules,
-  UrlRule,
-  FrequencyRule,
-  FrequencyConfig,
-  ExperienceContent,
-  BannerContent,
-  ModalContent,
-  TooltipContent,
-  ModalAction,
-  Context,
-  UserContext,
-  Decision,
-  TraceStep,
-  DecisionMetadata,
-  ExperienceConfig,
-  RuntimeState,
-} from './types';
+// Re-export plugins for convenience
+export { bannerPlugin, debugPlugin, frequencyPlugin } from '@prosdevlab/experience-sdk-plugins';
 
 // Export runtime class and functions
 export {
-  ExperienceRuntime,
   buildContext,
+  ExperienceRuntime,
   evaluateExperience,
   evaluateUrlRule,
 } from './runtime';
@@ -37,14 +19,31 @@ export {
 // Export singleton API
 export {
   createInstance,
-  init,
-  register,
+  destroy,
   evaluate,
   explain,
   getState,
+  init,
   on,
-  destroy,
-  experiences as default,
+  register,
 } from './singleton';
-
-
+// Export all types
+export type {
+  BannerContent,
+  Context,
+  Decision,
+  DecisionMetadata,
+  Experience,
+  ExperienceConfig,
+  ExperienceContent,
+  FrequencyConfig,
+  FrequencyRule,
+  ModalAction,
+  ModalContent,
+  RuntimeState,
+  TargetingRules,
+  TooltipContent,
+  TraceStep,
+  UrlRule,
+  UserContext,
+} from './types';

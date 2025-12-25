@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { SDK } from '@lytics/sdk-kit';
-import { bannerPlugin, type BannerPlugin } from './banner';
-import type { Experience } from '@prosdevlab/experience-sdk';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Experience } from '../types';
+import { type BannerPlugin, bannerPlugin } from './banner';
 
 type SDKWithBanner = SDK & { banner: BannerPlugin };
 
@@ -356,7 +356,7 @@ describe('Banner Plugin', () => {
       expect(document.querySelector('[data-experience-id="test-banner"]')).toBeTruthy();
 
       await sdk.destroy();
-      
+
       // After destroy, the banner should be removed from DOM
       expect(document.querySelector('[data-experience-id="test-banner"]')).toBeNull();
     });
@@ -436,4 +436,3 @@ describe('Banner Plugin', () => {
     });
   });
 });
-
