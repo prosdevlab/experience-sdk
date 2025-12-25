@@ -1,0 +1,266 @@
+import { SDK } from '@lytics/sdk-kit';
+import type {
+  Context,
+  Decision,
+  Experience,
+  ExperienceConfig,
+  RuntimeState,
+  TraceStep,
+  UrlRule,
+} from './types';
+
+/**
+ * Experience Runtime
+ *
+ * Core class that manages experience registration and evaluation.
+ * Built on @lytics/sdk-kit for plugin system and lifecycle management.
+ *
+ * Design principles:
+ * - Pure functions for evaluation logic (easy to test)
+ * - Event-driven architecture (extensible via plugins)
+ * - Explainability-first (every decision has reasons)
+ */
+export class ExperienceRuntime {
+  private sdk: SDK;
+  private experiences: Map<string, Experience> = new Map();
+  private decisions: Decision[] = [];
+  private initialized = false;
+
+  constructor(config: ExperienceConfig = {}) {
+    // Create SDK instance
+    this.sdk = new SDK({
+      name: 'experience-sdk',
+      ...config,
+    });
+  }
+
+  /**
+   * Initialize the runtime
+   */
+  async init(config?: ExperienceConfig): Promise<void> {
+    if (this.initialized) {
+      console.warn('[experiences] Already initialized');
+      return;
+    }
+
+    if (config) {
+      // Merge config if provided
+      Object.entries(config).forEach(([key, value]) => {
+        this.sdk.set(key, value);
+      });
+    }
+
+    // Initialize SDK (will init all plugins)
+    await this.sdk.init();
+
+    this.initialized = true;
+
+    // Emit ready event
+    this.sdk.emit('experiences:ready');
+  }
+
+  /**
+   * Register an experience
+   */
+  register(id: string, experience: Omit<Experience, 'id'>): void {
+    const exp: Experience = { id, ...experience };
+    this.experiences.set(id, exp);
+
+    this.sdk.emit('experiences:registered', { id, experience: exp });
+  }
+
+  /**
+   * Evaluate experiences against context
+   * Returns decision with explainability
+   */
+  evaluate(context?: Partial<Context>): Decision {
+    const startTime = Date.now();
+    const evalContext = buildContext(context);
+
+    // Find matching experience
+    let matchedExperience: Experience | undefined;
+    const allReasons: string[] = [];
+    const allTrace: TraceStep[] = [];
+
+    for (const [, experience] of this.experiences) {
+      const result = evaluateExperience(experience, evalContext);
+
+      allReasons.push(...result.reasons);
+      allTrace.push(...result.trace);
+
+      if (result.matched) {
+        matchedExperience = experience;
+        break; // First match wins
+      }
+    }
+
+    const decision: Decision = {
+      show: !!matchedExperience,
+      experienceId: matchedExperience?.id,
+      reasons: allReasons,
+      trace: allTrace,
+      context: evalContext,
+      metadata: {
+        evaluatedAt: Date.now(),
+        totalDuration: Date.now() - startTime,
+        experiencesEvaluated: this.experiences.size,
+      },
+    };
+
+    // Store decision for inspection
+    this.decisions.push(decision);
+
+    // Emit for plugins to react
+    this.sdk.emit('experiences:evaluated', decision);
+
+    return decision;
+  }
+
+  /**
+   * Explain a specific experience
+   */
+  explain(experienceId: string): Decision | null {
+    const experience = this.experiences.get(experienceId);
+    if (!experience) {
+      return null;
+    }
+
+    const context = buildContext();
+    const result = evaluateExperience(experience, context);
+
+    return {
+      show: result.matched,
+      experienceId,
+      reasons: result.reasons,
+      trace: result.trace,
+      context,
+      metadata: {
+        evaluatedAt: Date.now(),
+        totalDuration: 0,
+        experiencesEvaluated: 1,
+      },
+    };
+  }
+
+  /**
+   * Get runtime state (for inspection)
+   */
+  getState(): RuntimeState {
+    return {
+      initialized: this.initialized,
+      experiences: new Map(this.experiences),
+      decisions: [...this.decisions],
+      config: this.sdk.getAll(),
+    };
+  }
+
+  /**
+   * Event subscription (proxy to SDK)
+   */
+  on(event: string, handler: (...args: any[]) => void): () => void {
+    return this.sdk.on(event, handler);
+  }
+
+  /**
+   * Destroy runtime
+   */
+  async destroy(): Promise<void> {
+    await this.sdk.destroy();
+    this.experiences.clear();
+    this.decisions = [];
+    this.initialized = false;
+  }
+}
+
+// Pure functions for evaluation logic (easy to test, no dependencies)
+
+/**
+ * Build evaluation context from partial input
+ * Pure function - no side effects
+ */
+export function buildContext(partial?: Partial<Context>): Context {
+  return {
+    url: partial?.url ?? (typeof window !== 'undefined' ? window.location.href : ''),
+    timestamp: Date.now(),
+    user: partial?.user,
+    custom: partial?.custom,
+  };
+}
+
+/**
+ * Evaluate an experience against context
+ * Pure function - returns reasons and trace
+ */
+export function evaluateExperience(
+  experience: Experience,
+  context: Context
+): { matched: boolean; reasons: string[]; trace: TraceStep[] } {
+  const reasons: string[] = [];
+  const trace: TraceStep[] = [];
+  let matched = true;
+
+  // Evaluate URL rule
+  if (experience.targeting.url) {
+    const urlStart = Date.now();
+    const urlMatch = evaluateUrlRule(experience.targeting.url, context.url);
+
+    trace.push({
+      step: 'evaluate-url-rule',
+      timestamp: urlStart,
+      duration: Date.now() - urlStart,
+      input: { rule: experience.targeting.url, url: context.url },
+      output: urlMatch,
+      passed: urlMatch,
+    });
+
+    if (urlMatch) {
+      reasons.push('URL matches targeting rule');
+    } else {
+      reasons.push('URL does not match targeting rule');
+      matched = false;
+    }
+  }
+
+  // Evaluate frequency rule (will be checked by frequency plugin)
+  if (experience.frequency) {
+    const freqStart = Date.now();
+    // Note: Actual frequency checking is done by the frequency plugin
+    // This just records that a frequency rule exists
+    trace.push({
+      step: 'check-frequency-rule',
+      timestamp: freqStart,
+      duration: Date.now() - freqStart,
+      input: experience.frequency,
+      output: true,
+      passed: true,
+    });
+    reasons.push('Frequency rule will be checked by frequency plugin');
+  }
+
+  return { matched, reasons, trace };
+}
+
+/**
+ * Evaluate URL targeting rule
+ * Pure function - deterministic output
+ */
+export function evaluateUrlRule(rule: UrlRule, url: string = ''): boolean {
+  // Check equals (exact match)
+  if (rule.equals !== undefined) {
+    return url === rule.equals;
+  }
+
+  // Check contains (substring match)
+  if (rule.contains !== undefined) {
+    return url.includes(rule.contains);
+  }
+
+  // Check matches (regex match)
+  if (rule.matches !== undefined) {
+    return rule.matches.test(url);
+  }
+
+  // No rules specified = match all
+  return true;
+}
+

@@ -1,4 +1,35 @@
-// Placeholder for core package
-// Will be implemented in Phase 0
+/**
+ * Experience SDK - Core Package
+ *
+ * A lightweight, explainable, plugin-based client-side experience runtime
+ * built on @lytics/sdk-kit.
+ */
 
-export {};
+// Export all types
+export type {
+  Experience,
+  TargetingRules,
+  UrlRule,
+  FrequencyRule,
+  FrequencyConfig,
+  ExperienceContent,
+  BannerContent,
+  ModalContent,
+  TooltipContent,
+  ModalAction,
+  Context,
+  UserContext,
+  Decision,
+  TraceStep,
+  DecisionMetadata,
+  ExperienceConfig,
+  RuntimeState,
+} from './types';
+
+// Export runtime class and functions
+export {
+  ExperienceRuntime,
+  buildContext,
+  evaluateExperience,
+  evaluateUrlRule,
+} from './runtime';

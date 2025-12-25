@@ -21,7 +21,7 @@ Build the foundational Experience SDK with explainability-first architecture. Th
 5. **Developer-Focused** - Built for debugging and inspection
 
 ### Success Criteria
-- [ ] Runtime can register and evaluate experiences
+- [x] Runtime can register and evaluate experiences
 - [ ] Every decision includes human-readable reasons
 - [ ] Works via script tag with global `experiences` object
 - [ ] 3 working plugins (storage, debug, banner)
