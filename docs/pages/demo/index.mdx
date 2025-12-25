@@ -1,0 +1,103 @@
+# Interactive Demo
+
+Experience the SDK in action with a live, interactive demo that showcases the **explainability-first** decision engine.
+
+## 🎯 [Banner Demo](/demo/banner)
+
+See how the Experience SDK evaluates and renders a banner experience in real-time.
+
+**Features showcased:**
+- ✅ Real-time decision evaluation
+- ✅ Frequency capping (3 per session)
+- ✅ Explainable reasons (why show/hide?)
+- ✅ Step-by-step execution trace
+- ✅ Full context visibility
+
+[Try Live Demo →](/demo/banner)
+
+---
+
+## What You'll Learn
+
+The demo demonstrates the **core value proposition**: understanding **when** and **why** an experience shows or hides.
+
+### 1. **Decision Engine**
+   - Click "Simulate Page View" to trigger evaluation
+   - Watch frequency cap in action (0/3 → 3/3)
+   - See banner hide after cap is reached
+
+### 2. **Explainability Output**
+   - **Reasons**: Human-readable explanations
+     - "✅ URL matches targeting rule"
+     - "Frequency cap not reached (2/3 this session)"
+   - **Trace Steps**: Machine-readable execution log
+     - Timing per step (milliseconds)
+     - Input/output for each evaluation
+   - **Context**: Full snapshot of evaluation state
+
+### 3. **Realistic Behavior**
+   - Banner persists across page refreshes (sessionStorage)
+   - Reset button clears frequency cap for retesting
+   - Accurate impression counting
+
+---
+
+## More Configuration Examples
+
+Want to see different banner types? Check out the **Examples** section in the documentation:
+
+- **Cookie Banners** - Once per day, GDPR-compliant
+- **Announcements** - 5 times per session
+- **Flash Sales** - Limited-time urgency (2x/session)
+- **Custom Targeting** - URL patterns, user segments, custom rules
+
+Each example shows the **configuration code** needed to implement that experience type.
+
+[Browse Examples →](/getting-started)
+
+---
+
+## Coming Soon
+
+### 🪟 Modal Experience
+*(Phase 1)*
+
+Interactive modal demos with:
+- Center overlays
+- Lightbox style
+- Multi-step forms
+
+### 💬 Tooltip Experience
+*(Phase 1)*
+
+Contextual tooltip demos with:
+- Element targeting
+- Position options (top, bottom, left, right)
+- Hover vs click triggers
+
+---
+
+## Why This Matters
+
+Unlike traditional personalization tools, **Experience SDK** focuses on:
+
+1. **Transparency** - Every decision has structured reasons
+2. **Debuggability** - Trace execution step-by-step
+3. **Testability** - Simulate scenarios without deployment
+4. **Developer Experience** - Built for engineers who need to understand "why"
+
+This is the **decision layer** between:
+- **User context** (provided by analytics/CDP like jstag3) ← WHO they are
+- **Experience rendering** (your UI components) ← WHAT to show
+
+**You control WHEN** with explainable logic.
+
+---
+
+## Next Steps
+
+- [Try Live Demo](/demo/banner) - See it in action
+- [Getting Started](/getting-started) - Install and setup
+- [API Reference](/api) - Complete documentation
+
+

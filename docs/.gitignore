@@ -1,0 +1,21 @@
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Build outputs
+public/sdk/
+
+# Local env
+.env*.local
+
+# Debug
+npm-debug.log*
+.pnpm-debug.log*
+
+# Vercel
+.vercel
+

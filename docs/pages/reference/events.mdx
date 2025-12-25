@@ -1,0 +1,571 @@
+# Events Reference
+
+Experience SDK uses an event-driven architecture. All events are emitted via the SDK's event emitter and can have multiple listeners.
+
+## Why Events?
+
+Unlike callback-based approaches, events provide:
+
+- **Multiple Consumers** - Many listeners can react to one event
+- **Decoupled Architecture** - Banner plugin doesn't know about tracking
+- **Serializable Config** - No function references in config (JSON-safe)
+- **Testable** - Easy to mock and verify
+- **Composable** - Add/remove listeners dynamically
+
+## Core Events
+
+### `experiences:evaluated`
+
+Emitted after evaluating all registered experiences.
+
+**When**: After calling `experiences.evaluate()`
+
+**Payload**:
+```typescript
+{
+  decision: Decision;      // The evaluation result
+  experience?: Experience; // The matched experience (if any)
+}
+```
+
+**Example**:
+```typescript
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show) {
+    console.log(`Show ${experience?.id}`);
+    console.log('Reasons:', decision.reasons);
+  } else {
+    console.log('Hide all experiences');
+    console.log('Reasons:', decision.reasons);
+  }
+});
+```
+
+**Use Cases**:
+- Track impressions
+- Custom rendering logic
+- Debug logging
+- A/B test tracking
+
+---
+
+### `experiences:action`
+
+Emitted when a user interacts with an experience (e.g., clicks a CTA button).
+
+**When**: User clicks a button configured with `button.action` or `button.url`
+
+**Payload**:
+```typescript
+{
+  experienceId: string; // ID of the experience
+  action: string;       // Action identifier
+  url?: string;         // Navigation URL (if provided)
+  timestamp: number;    // Event timestamp
+}
+```
+
+**Example**:
+```typescript
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  // Track click
+  analytics.track('Experience Action', { experienceId, action });
+  
+  // Custom logic for specific actions
+  if (action === 'subscribe') {
+    showSubscriptionForm();
+  }
+  
+  // URL navigation happens automatically if provided
+  console.log('Navigating to:', url);
+});
+```
+
+**Use Cases**:
+- Track button clicks
+- Custom navigation logic
+- Trigger side effects (modals, forms, etc.)
+- A/B test goal tracking
+
+**Note**: If `button.url` is provided, the SDK automatically navigates after emitting the event.
+
+---
+
+### `experiences:dismissed`
+
+Emitted when a user dismisses an experience (e.g., closes a banner).
+
+**When**: User clicks the dismiss/close button
+
+**Payload**:
+```typescript
+{
+  experienceId: string; // ID of the dismissed experience
+  timestamp: number;    // Event timestamp
+}
+```
+
+**Example**:
+```typescript
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  // Track dismissal
+  analytics.track('Experience Dismissed', { experienceId });
+  
+  // Optionally suppress for longer period
+  suppressExperience(experienceId, '7d');
+});
+```
+
+**Use Cases**:
+- Track dismissal rates
+- Custom suppression logic
+- User preference tracking
+- Engagement metrics
+
+**Note**: Dismissals do NOT count as impressions for frequency capping.
+
+---
+
+### `sdk:ready`
+
+Emitted when SDK initialization is complete.
+
+**When**: After `experiences.init()` finishes
+
+**Payload**: None
+
+**Example**:
+```typescript
+experiences.on('sdk:ready', () => {
+  console.log('SDK initialized');
+  // Safe to register experiences now
+});
+```
+
+---
+
+### `sdk:destroy`
+
+Emitted before SDK is destroyed.
+
+**When**: Before `experiences.destroy()` completes
+
+**Payload**: None
+
+**Example**:
+```typescript
+experiences.on('sdk:destroy', () => {
+  console.log('Cleaning up...');
+  // Unsubscribe from external services
+});
+```
+
+---
+
+## Event Patterns
+
+### Multiple Listeners
+
+Events can have multiple listeners (unlike callbacks):
+
+```typescript
+// Listener 1: jstag3 tracking
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  window.jstag.send('experience_action', { experienceId, action });
+});
+
+// Listener 2: Google Analytics
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_action', { experienceId, action });
+});
+
+// Listener 3: Custom business logic
+experiences.on('experiences:action', ({ action }) => {
+  if (action === 'accept-cookies') {
+    setCookieConsent(true);
+  }
+});
+```
+
+### Unsubscribing
+
+Store the unsubscribe function to stop listening:
+
+```typescript
+const unsubscribe = experiences.on('experiences:action', handler);
+
+// Later...
+unsubscribe(); // Stop listening
+```
+
+### Conditional Logic
+
+Use event payloads to implement conditional logic:
+
+```typescript
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  // Only track certain experiences
+  if (experienceId.startsWith('promo-')) {
+    trackPromoClick(action);
+  }
+  
+  // Different behavior per action
+  switch (action) {
+    case 'subscribe':
+      showSubscriptionModal();
+      break;
+    case 'accept-cookies':
+      setCookieConsent(true);
+      break;
+    case 'dismiss':
+      // Custom dismissal logic
+      break;
+  }
+});
+```
+
+### Async Handlers
+
+Event handlers can be async:
+
+```typescript
+experiences.on('experiences:action', async ({ experienceId, action }) => {
+  // Make API call
+  const response = await fetch('/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ experienceId, action, timestamp: Date.now() })
+  });
+  
+  if (response.ok) {
+    console.log('Tracked successfully');
+  }
+});
+```
+
+---
+
+## Integration Examples
+
+### jstag3 (Lytics)
+
+Track all experience events to Lytics:
+
+```typescript
+// Track impressions
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    window.jstag.send('experience_shown', {
+      experience_id: experience.id,
+      experience_type: experience.type,
+      targeting: experience.targeting,
+      frequency: experience.frequency,
+      reasons: decision.reasons
+    });
+  }
+});
+
+// Track actions
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  window.jstag.send('experience_action', {
+    experience_id: experienceId,
+    action: action,
+    destination_url: url
+  });
+});
+
+// Track dismissals
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  window.jstag.send('experience_dismissed', {
+    experience_id: experienceId
+  });
+});
+```
+
+You can also create a reusable jstag3 plugin:
+
+```typescript
+// jstag3Plugin.ts
+export function initJstag3Tracking(experiences) {
+  if (!window.jstag) {
+    console.warn('jstag not available');
+    return;
+  }
+  
+  experiences.on('experiences:evaluated', ({ decision, experience }) => {
+    if (decision.show && experience) {
+      window.jstag.send('experience_shown', {
+        experience_id: experience.id,
+        experience_type: experience.type
+      });
+    }
+  });
+  
+  experiences.on('experiences:action', ({ experienceId, action, url }) => {
+    window.jstag.send('experience_action', {
+      experience_id: experienceId,
+      action: action,
+      destination_url: url
+    });
+  });
+  
+  experiences.on('experiences:dismissed', ({ experienceId }) => {
+    window.jstag.send('experience_dismissed', {
+      experience_id: experienceId
+    });
+  });
+}
+
+// Usage
+initJstag3Tracking(experiences);
+```
+
+---
+
+### Google Analytics 4
+
+Track experience events to GA4:
+
+```typescript
+// Track impressions
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    gtag('event', 'experience_impression', {
+      experience_id: experience.id,
+      experience_type: experience.type
+    });
+  }
+});
+
+// Track actions
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_click', {
+    experience_id: experienceId,
+    action_type: action
+  });
+});
+
+// Track dismissals
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  gtag('event', 'experience_dismissed', {
+    experience_id: experienceId
+  });
+});
+```
+
+---
+
+### Segment
+
+Track experience events to Segment:
+
+```typescript
+// Track impressions
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    analytics.track('Experience Shown', {
+      experienceId: experience.id,
+      experienceType: experience.type,
+      reasons: decision.reasons
+    });
+  }
+});
+
+// Track actions
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  analytics.track('Experience Action', {
+    experienceId,
+    action,
+    url
+  });
+});
+
+// Track dismissals
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  analytics.track('Experience Dismissed', {
+    experienceId
+  });
+});
+```
+
+---
+
+### Custom API
+
+Send events to your own API:
+
+```typescript
+const trackEvent = async (eventName, payload) => {
+  await fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      event: eventName,
+      payload,
+      timestamp: Date.now()
+    })
+  });
+};
+
+// Track all events
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    trackEvent('experience_shown', {
+      experienceId: experience.id,
+      experienceType: experience.type
+    });
+  }
+});
+
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  trackEvent('experience_action', { experienceId, action, url });
+});
+
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  trackEvent('experience_dismissed', { experienceId });
+});
+```
+
+---
+
+## Comparison: Callbacks vs. Events
+
+### Pathfora (Callbacks - Monolithic)
+
+```javascript
+// ❌ Not serializable, single consumer, tightly coupled
+{
+  okMessage: 'Shop Now',
+  confirmAction: {
+    name: 'shop_cta',
+    callback: function(event, payload) {
+      // MUST define all logic here
+      analytics.track('Shop CTA', payload);
+      jstag.send('shop_cta', payload);
+      window.location = '/products';
+    }
+  }
+}
+```
+
+**Problems:**
+- Can't serialize config to JSON (has function)
+- Can't save to CMS/database
+- Tight coupling (widget executes callback)
+- Single handler only
+- Hard to test
+
+---
+
+### Our SDK (Events - Modular)
+
+```typescript
+// ✅ Config is pure data (serializable)
+{
+  button: {
+    text: 'Shop Now',
+    url: '/products',
+    action: 'shop-cta'
+  }
+}
+
+// App code (decoupled)
+experiences.on('experiences:action', ({ action, url }) => {
+  // Custom analytics
+  analytics.track('Banner Action', { action, url });
+});
+
+// jstag3 plugin (separate concern)
+experiences.on('experiences:action', ({ action }) => {
+  jstag.send('experience_action', { action });
+});
+
+// URL navigation happens automatically
+```
+
+**Benefits:**
+- ✅ Config is pure data (save to CMS!)
+- ✅ Multiple consumers
+- ✅ Decoupled (banner doesn't know about tracking)
+- ✅ Easy to test
+- ✅ Composable
+
+---
+
+## Best Practices
+
+### 1. Keep Event Handlers Lightweight
+
+```typescript
+// ✅ Good: Quick, non-blocking
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_action', { experienceId, action });
+});
+
+// ❌ Avoid: Heavy computation or long-running tasks
+experiences.on('experiences:action', async ({ experienceId }) => {
+  // This could block for seconds
+  const analytics = await heavyAnalyticsInit();
+  await analytics.track('event');
+});
+```
+
+### 2. Unsubscribe When Done
+
+```typescript
+// Store unsubscribe function
+const unsubscribe = experiences.on('experiences:action', handler);
+
+// Clean up when component unmounts
+useEffect(() => {
+  return () => {
+    unsubscribe();
+  };
+}, []);
+```
+
+### 3. Use TypeScript for Type Safety
+
+```typescript
+import type { Decision, Experience } from '@prosdevlab/experience-sdk';
+
+experiences.on('experiences:evaluated', ({ decision, experience }: {
+  decision: Decision;
+  experience?: Experience;
+}) => {
+  // TypeScript will help you
+  if (experience) {
+    console.log(experience.id); // Autocomplete works!
+  }
+});
+```
+
+### 4. Create Reusable Integration Functions
+
+```typescript
+// integrations/analytics.ts
+export function setupAnalyticsTracking(experiences) {
+  experiences.on('experiences:evaluated', ({ decision, experience }) => {
+    if (decision.show && experience) {
+      analytics.track('Experience Shown', { experienceId: experience.id });
+    }
+  });
+  
+  experiences.on('experiences:action', ({ experienceId, action }) => {
+    analytics.track('Experience Action', { experienceId, action });
+  });
+}
+
+// main.ts
+import { setupAnalyticsTracking } from './integrations/analytics';
+setupAnalyticsTracking(experiences);
+```
+
+---
+
+## Next Steps
+
+- [Getting Started](/getting-started) - Basic event examples
+- [Banner Demo](/demo/banner) - See events in action
+- [API Reference](/reference) - Complete API docs
+

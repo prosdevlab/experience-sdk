@@ -32,12 +32,17 @@
         "packages/core/src/types.ts",
         "packages/core/src/runtime.ts",
         "packages/plugins/src/types.ts",
-        "specs/**/contracts/types.ts"
+        "specs/**/contracts/types.ts",
+        "docs/**/*.tsx"
       ],
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "noArrayIndexKey": "off"
+          },
+          "correctness": {
+            "useExhaustiveDependencies": "off"
           }
         }
       }

@@ -6,7 +6,7 @@
  */
 
 import type { PluginFunction } from '@lytics/sdk-kit';
-import type { BannerContent, Decision, Experience } from '../types';
+import type { BannerContent, Experience } from '../types';
 
 export interface BannerPluginConfig {
   banner?: {
@@ -56,7 +56,7 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   function createBannerElement(experience: Experience): HTMLElement {
     const content = experience.content as BannerContent;
     const position = config.get('banner.position') ?? 'top';
-    const dismissable = config.get('banner.dismissable') ?? true;
+    const dismissable = content.dismissable ?? config.get('banner.dismissable') ?? true;
     const zIndex = config.get('banner.zIndex') ?? 10000;
 
     // Create banner container
@@ -100,6 +100,53 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
 
     banner.appendChild(contentDiv);
 
+    // Create button container for CTA and/or dismiss
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+
+    // Add CTA button if present
+    if (content.button) {
+      const ctaButton = document.createElement('button');
+      ctaButton.textContent = content.button.text;
+      ctaButton.style.cssText = `
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: #ffffff;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      `;
+
+      ctaButton.addEventListener('mouseenter', () => {
+        ctaButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      });
+
+      ctaButton.addEventListener('mouseleave', () => {
+        ctaButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      });
+
+      ctaButton.addEventListener('click', () => {
+        // Emit action event
+        instance.emit('experiences:action', {
+          experienceId: experience.id,
+          type: 'banner',
+          action: content.button?.action,
+          url: content.button?.url,
+          timestamp: Date.now(),
+        });
+
+        // Navigate if URL provided
+        if (content.button?.url) {
+          window.location.href = content.button.url;
+        }
+      });
+
+      buttonContainer.appendChild(ctaButton);
+    }
+
     // Add dismiss button if dismissable
     if (dismissable) {
       const closeButton = document.createElement('button');
@@ -134,8 +181,10 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         });
       });
 
-      banner.appendChild(closeButton);
+      buttonContainer.appendChild(closeButton);
     }
+
+    banner.appendChild(buttonContainer);
 
     return banner;
   }
