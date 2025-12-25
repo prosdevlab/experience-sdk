@@ -33,3 +33,18 @@ export {
   evaluateExperience,
   evaluateUrlRule,
 } from './runtime';
+
+// Export singleton API
+export {
+  createInstance,
+  init,
+  register,
+  evaluate,
+  explain,
+  getState,
+  on,
+  destroy,
+  experiences as default,
+} from './singleton';
+
+
