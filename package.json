@@ -10,10 +10,13 @@
   "author": "prosdevlab",
   "license": "MIT",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "docs"
   ],
   "scripts": {
     "build": "turbo build",
+    "build:sdk": "pnpm --filter @prosdevlab/experience-sdk-plugins build && pnpm --filter @prosdevlab/experience-sdk build",
+    "build:docs": "pnpm build:sdk && pnpm --filter docs build",
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "vitest run",
@@ -25,7 +28,11 @@
     "lint-staged": "biome check --write --no-errors-on-unmatched",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm build:docs",
+    "docs:start": "pnpm --filter docs start",
+    "docs:export": "pnpm build:docs && pnpm --filter docs export"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",

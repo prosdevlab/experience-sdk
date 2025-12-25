@@ -454,6 +454,134 @@ describe('Banner Plugin', () => {
     });
   });
 
+  describe('CTA Button', () => {
+    it('should render CTA button when provided', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          button: {
+            text: 'Click Me',
+            url: '/test',
+          },
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const button = banner?.querySelector('button');
+      expect(button).toBeTruthy();
+      expect(button?.textContent).toBe('Click Me');
+    });
+
+    it('should not render CTA button when not provided', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      // Should only have dismiss button (×), not a CTA button
+      const buttons = banner?.querySelectorAll('button');
+      expect(buttons?.length).toBe(1);
+      expect(buttons?.[0].textContent).toBe('×');
+    });
+
+    it('should emit experiences:action event when CTA clicked', () => {
+      const handler = vi.fn();
+      sdk.on('experiences:action', handler);
+
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          button: {
+            text: 'Click Me',
+            action: 'test-action',
+            url: '/test',
+          },
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const ctaButton = Array.from(banner?.querySelectorAll('button') || []).find(
+        (btn) => btn.textContent === 'Click Me'
+      ) as HTMLElement;
+
+      ctaButton.click();
+
+      expect(handler).toHaveBeenCalledWith({
+        experienceId: 'test-banner',
+        type: 'banner',
+        action: 'test-action',
+        url: '/test',
+        timestamp: expect.any(Number),
+      });
+    });
+
+    it('should respect dismissable: false config', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          button: {
+            text: 'Click Me',
+          },
+          dismissable: false,
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const buttons = banner?.querySelectorAll('button');
+
+      // Should only have CTA button, no dismiss button
+      expect(buttons?.length).toBe(1);
+      expect(buttons?.[0].textContent).toBe('Click Me');
+    });
+
+    it('should show both CTA and dismiss button when both provided', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          button: {
+            text: 'Learn More',
+          },
+          dismissable: true,
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const buttons = banner?.querySelectorAll('button');
+
+      // Should have both buttons
+      expect(buttons?.length).toBe(2);
+      expect(buttons?.[0].textContent).toBe('Learn More');
+      expect(buttons?.[1].textContent).toBe('×');
+    });
+  });
+
   describe('Styling', () => {
     it('should apply correct z-index', () => {
       const experience: Experience = {

@@ -61,6 +61,33 @@ experiences.register('welcome', { ... });
 const decision = experiences.evaluate();
 ```
 
+### Event-Driven Architecture
+
+Listen to events to integrate with analytics, tracking, and custom business logic:
+
+```typescript
+// Track impressions
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    analytics.track('Experience Shown', { id: experience.id });
+  }
+});
+
+// Track button clicks
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  analytics.track('Experience Action', { experienceId, action });
+});
+
+// Track dismissals
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  analytics.track('Experience Dismissed', { experienceId });
+});
+```
+
+**Multiple listeners can react to the same event** (jstag3, GA, Segment, custom code).
+
+See the [Events Reference](https://your-docs-url/api/events) for comprehensive documentation.
+
 ## Documentation
 
 See [notes/IMPLEMENTATION_PLAN.md](notes/IMPLEMENTATION_PLAN.md) for detailed implementation guide.

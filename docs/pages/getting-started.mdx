@@ -1,0 +1,220 @@
+# Getting Started
+
+Install the Experience SDK and start building explainable experiences.
+
+## Installation
+
+### Via npm
+
+```bash
+npm install @prosdevlab/experience-sdk
+```
+
+### Via pnpm
+
+```bash
+pnpm add @prosdevlab/experience-sdk
+```
+
+### Via Script Tag
+
+```html
+<script src="https://unpkg.com/@prosdevlab/experience-sdk"></script>
+```
+
+## Quick Start
+
+### For npm/bundler users
+
+```typescript
+import { createInstance } from '@prosdevlab/experience-sdk';
+
+// Create an instance
+const experiences = createInstance({ debug: true });
+
+// Initialize
+await experiences.init();
+
+// Register an experience
+experiences.register('welcome-banner', {
+  type: 'banner',
+  targeting: {
+    url: { contains: '/' }
+  },
+  content: {
+    title: 'Welcome!',
+    message: 'Thanks for visiting our site'
+  },
+  frequency: {
+    max: 3,
+    per: 'session'
+  }
+});
+
+// Evaluate
+const decision = experiences.evaluate();
+
+if (decision.show) {
+  console.log('Show experience:', decision.experienceId);
+  console.log('Reasons:', decision.reasons);
+}
+```
+
+## Listening to Events
+
+Experience SDK uses an event-driven architecture. Listen to events to integrate with analytics, tracking, and custom business logic:
+
+```typescript
+// Listen to evaluation events
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  console.log('Decision:', decision.show ? 'SHOW' : 'HIDE');
+  console.log('Reasons:', decision.reasons);
+  
+  if (decision.show && experience) {
+    console.log('Experience:', experience.id);
+  }
+});
+
+// Listen to button clicks
+experiences.on('experiences:action', ({ experienceId, action, url }) => {
+  console.log('User clicked:', action);
+  console.log('Experience:', experienceId);
+  
+  // URL navigation happens automatically if provided
+  if (url) {
+    console.log('Navigating to:', url);
+  }
+});
+
+// Listen to dismissals
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  console.log('User dismissed:', experienceId);
+});
+```
+
+### Tracking with Analytics
+
+Integrate with any analytics platform by listening to SDK events:
+
+```typescript
+// Google Analytics 4
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    gtag('event', 'experience_shown', {
+      experience_id: experience.id,
+      experience_type: experience.type
+    });
+  }
+});
+
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_action', {
+    experience_id: experienceId,
+    action: action
+  });
+});
+
+// Segment
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  if (decision.show && experience) {
+    analytics.track('Experience Shown', {
+      experienceId: experience.id,
+      experienceType: experience.type
+    });
+  }
+});
+```
+
+### Multiple Consumers
+
+The event-driven architecture allows multiple listeners to react to the same event:
+
+```typescript
+// Listener 1: jstag3 tracking
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  window.jstag.send('experience_action', {
+    experience_id: experienceId,
+    action: action
+  });
+});
+
+// Listener 2: Google Analytics (separate listener)
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_action', {
+    experience_id: experienceId,
+    action: action
+  });
+});
+
+// Listener 3: Custom business logic (separate listener)
+experiences.on('experiences:action', ({ action }) => {
+  if (action === 'accept-cookies') {
+    document.cookie = 'cookies_accepted=true';
+    initializeAnalytics();
+  }
+});
+```
+
+### For script tag users
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="/sdk/index.global.js"></script>
+</head>
+<body>
+  <script>
+    // Initialize
+    experiences.init({ debug: true });
+
+    // Register an experience
+    experiences.register('welcome-banner', {
+      type: 'banner',
+      targeting: {
+        url: { contains: '/' }
+      },
+      content: {
+        title: 'Welcome!',
+        message: 'Thanks for visiting'
+      }
+    });
+
+    // Evaluate
+    const decision = experiences.evaluate();
+    console.log('Decision:', decision);
+  </script>
+</body>
+</html>
+```
+
+## Understanding Decisions
+
+Every evaluation returns a `Decision` object with explainability built-in:
+
+```typescript
+{
+  show: true,
+  experienceId: 'welcome-banner',
+  reasons: [
+    "URL matches '/'",
+    "Frequency cap not reached (1/3 this session)",
+    "Experience is active"
+  ],
+  trace: [...], // Detailed trace steps
+  context: {...}, // Evaluation context
+  metadata: {
+    evaluatedAt: 1234567890,
+    experienceCount: 1,
+    evaluationTimeMs: 0.5
+  }
+}
+```
+
+## Next Steps
+
+- [Interactive Demo](/demo) - Try it in your browser
+- [API Reference](/reference) - Complete API documentation
+- [Events Reference](/reference/events) - Learn about event-driven patterns
+- [Plugins](/reference/plugins) - Learn about plugins
+

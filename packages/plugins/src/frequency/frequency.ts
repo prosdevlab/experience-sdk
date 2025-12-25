@@ -221,13 +221,8 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
         // If not in map, try to infer from the decision trace
         if (!experienceFrequencyMap.has(decision.experienceId)) {
           const freqStep = decision.trace.find((t: TraceStep) => t.step === 'check-frequency-cap');
-          if (
-            freqStep &&
-            freqStep.input &&
-            typeof freqStep.input === 'object' &&
-            'per' in freqStep.input
-          ) {
-            per = (freqStep.input as any).per;
+          if (freqStep?.input && typeof freqStep.input === 'object' && 'per' in freqStep.input) {
+            per = (freqStep.input as { per: 'session' | 'day' | 'week' }).per;
             // Cache it for next time
             experienceFrequencyMap.set(decision.experienceId, per);
           }

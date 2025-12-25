@@ -1,0 +1,273 @@
+# API Reference
+
+Complete API documentation for the Experience SDK.
+
+## Core API
+
+### `createInstance(config?)`
+
+Creates a new instance of the Experience SDK.
+
+```typescript
+import { createInstance } from '@prosdevlab/experience-sdk';
+
+const experiences = createInstance({
+  debug: true,
+  storage: 'session'
+});
+```
+
+**Parameters:**
+- `config` (optional): Configuration object
+  - `debug?: boolean` - Enable debug mode
+  - `storage?: 'session' | 'local' | 'memory'` - Storage backend
+
+**Returns:** `ExperienceRuntime` instance
+
+---
+
+### `init(config?)`
+
+Initializes the SDK. Call this before registering experiences.
+
+```typescript
+await experiences.init({ debug: true });
+```
+
+**Parameters:**
+- `config` (optional): Configuration object (same as createInstance)
+
+**Returns:** `Promise<void>`
+
+---
+
+### `register(id, experience)`
+
+Registers an experience for evaluation.
+
+```typescript
+experiences.register('my-banner', {
+  type: 'banner',
+  targeting: {
+    url: { contains: '/products' }
+  },
+  content: {
+    title: 'Special Offer',
+    message: 'Get 20% off today!'
+  },
+  frequency: {
+    max: 3,
+    per: 'session'
+  }
+});
+```
+
+**Parameters:**
+- `id: string` - Unique identifier for the experience
+- `experience: Omit<Experience, 'id'>` - Experience configuration
+
+**Returns:** `void`
+
+---
+
+### `evaluate(context?)`
+
+Evaluates registered experiences and returns a decision.
+
+```typescript
+const decision = experiences.evaluate({
+  url: window.location.href,
+  user: { id: 'user-123' }
+});
+```
+
+**Parameters:**
+- `context` (optional): Evaluation context
+  - `url?: string` - Current URL
+  - `user?: UserContext` - User information
+  - `timestamp?: number` - Evaluation timestamp
+  - `custom?: Record<string, any>` - Custom context
+
+**Returns:** `Decision` object
+
+---
+
+### `explain(experienceId)`
+
+Explains why a specific experience would/wouldn't show.
+
+```typescript
+const explanation = experiences.explain('my-banner');
+console.log(explanation?.reasons);
+```
+
+**Parameters:**
+- `experienceId: string` - Experience ID to explain
+
+**Returns:** `Decision | null`
+
+---
+
+### `getState()`
+
+Gets current runtime state.
+
+```typescript
+const state = experiences.getState();
+console.log('Registered experiences:', state.experiences);
+console.log('Decision history:', state.decisions);
+```
+
+**Returns:** `RuntimeState` object
+
+---
+
+### `on(event, handler)`
+
+Subscribes to SDK events. Returns an unsubscribe function.
+
+```typescript
+const unsubscribe = experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  console.log('Decision made:', decision);
+});
+
+// Later: stop listening
+unsubscribe();
+```
+
+**Parameters:**
+- `event: string` - Event name (see [Events Reference](/reference/events))
+- `handler: Function` - Event handler function
+
+**Returns:** `() => void` - Unsubscribe function
+
+#### Available Events
+
+##### `experiences:evaluated`
+
+Emitted after evaluating all registered experiences.
+
+```typescript
+experiences.on('experiences:evaluated', ({ decision, experience }) => {
+  console.log('Show?', decision.show);
+  console.log('Experience:', experience?.id);
+  console.log('Reasons:', decision.reasons);
+});
+```
+
+**Payload:**
+- `decision: Decision` - The evaluation result
+- `experience?: Experience` - The matched experience (if any)
+
+##### `experiences:action`
+
+Emitted when a user clicks a CTA button.
+
+```typescript
+experiences.on('experiences:action', ({ experienceId, action, url, timestamp }) => {
+  console.log('Action:', action);
+  console.log('URL:', url); // Will navigate automatically if present
+  
+  // Track in analytics
+  gtag('event', 'experience_action', { experienceId, action });
+});
+```
+
+**Payload:**
+- `experienceId: string` - ID of the experience
+- `action: string` - Action identifier (e.g., 'cta', 'accept-cookies')
+- `url?: string` - Navigation URL (if provided)
+- `timestamp: number` - Event timestamp
+
+**Note:** If `button.url` is provided, navigation happens automatically after the event is emitted.
+
+##### `experiences:dismissed`
+
+Emitted when a user dismisses an experience (e.g., closes a banner).
+
+```typescript
+experiences.on('experiences:dismissed', ({ experienceId, timestamp }) => {
+  console.log('User dismissed:', experienceId);
+  
+  // Track dismissal
+  analytics.track('Experience Dismissed', { experienceId });
+});
+```
+
+**Payload:**
+- `experienceId: string` - ID of the dismissed experience
+- `timestamp: number` - Event timestamp
+
+**Note:** Dismissals do NOT count as impressions for frequency capping.
+
+##### `sdk:ready`
+
+Emitted when SDK initialization is complete.
+
+```typescript
+experiences.on('sdk:ready', () => {
+  console.log('SDK ready!');
+});
+```
+
+##### `sdk:destroy`
+
+Emitted before SDK is destroyed.
+
+```typescript
+experiences.on('sdk:destroy', () => {
+  console.log('SDK shutting down');
+});
+```
+
+#### Multiple Listeners
+
+Events can have multiple listeners (unlike callbacks):
+
+```typescript
+// Listener 1: jstag3 tracking
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  window.jstag.send('experience_action', { experienceId, action });
+});
+
+// Listener 2: Google Analytics
+experiences.on('experiences:action', ({ experienceId, action }) => {
+  gtag('event', 'experience_action', { experienceId, action });
+});
+
+// Listener 3: Custom logic
+experiences.on('experiences:action', ({ action }) => {
+  if (action === 'accept-cookies') {
+    setCookieConsent(true);
+  }
+});
+```
+
+See the [Events Reference](/reference/events) for comprehensive event documentation.
+
+---
+
+### `destroy()`
+
+Destroys the SDK instance and cleans up resources.
+
+```typescript
+await experiences.destroy();
+```
+
+**Returns:** `Promise<void>`
+
+---
+
+## Types
+
+See the [TypeScript Types](/reference/types) page for complete type definitions.
+
+## Events
+
+See the [Events Reference](/reference/events) page for comprehensive event documentation and integration examples.
+
+## Plugins
+
+See the [Plugins](/reference/plugins) page for plugin documentation.
+

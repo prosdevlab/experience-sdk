@@ -14,6 +14,12 @@ export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
 export interface BannerContent {
   title?: string;
   message: string;
+  button?: {
+    text: string;
+    url?: string;
+    action?: string;
+  };
+  dismissable?: boolean;
 }
 
 /**

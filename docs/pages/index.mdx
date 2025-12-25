@@ -1,0 +1,57 @@
+# Experience SDK
+
+A lightweight, explainable, plugin-based client-side experience runtime built on [@lytics/sdk-kit](https://github.com/Lytics/sdk-kit).
+
+## Key Features
+
+- **Explainability-First** - Every decision returns structured reasons
+- **Plugin-Based** - Extensible architecture using sdk-kit patterns
+- **Script Tag Ready** - Works without build tools (IIFE bundle)
+- **Type-Safe** - Full TypeScript support
+- **Developer-Focused** - Built for debugging and inspection
+
+## Quick Start
+
+```bash
+npm install @prosdevlab/experience-sdk
+```
+
+```typescript
+import { createInstance } from '@prosdevlab/experience-sdk';
+
+const experiences = createInstance({ debug: true });
+
+experiences.register('welcome-banner', {
+  type: 'banner',
+  targeting: { url: { contains: '/' } },
+  content: { title: 'Welcome!', message: 'Thanks for visiting' }
+});
+
+const decision = experiences.evaluate();
+console.log(decision.reasons); // ['URL matches', 'Frequency cap not reached']
+```
+
+## What Makes It Different
+
+Every decision includes human-readable reasons explaining **why** an experience was shown or hidden:
+
+```json
+{
+  "show": true,
+  "experienceId": "welcome-banner",
+  "reasons": [
+    "URL matches '/'",
+    "Frequency cap not reached (1/3 this session)",
+    "User targeting passed"
+  ],
+  "trace": [...],
+  "metadata": {...}
+}
+```
+
+## Next Steps
+
+- [Getting Started](/getting-started) - Installation and setup
+- [Interactive Demo](/demo) - Try it in your browser
+- [API Reference](/reference) - Complete API documentation
+
