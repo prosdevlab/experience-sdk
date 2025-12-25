@@ -22,10 +22,10 @@ Build the foundational Experience SDK with explainability-first architecture. Th
 
 ### Success Criteria
 - [x] Runtime can register and evaluate experiences
+- [x] Unit test coverage > 80% (achieved 100%)
 - [ ] Every decision includes human-readable reasons
 - [ ] Works via script tag with global `experiences` object
 - [ ] 3 working plugins (storage, debug, banner)
-- [ ] Unit test coverage > 80%
 - [ ] Bundle size < 15KB gzipped (with sdk-kit)
 - [ ] Demo site showing explainability
 
