@@ -65,9 +65,11 @@ export interface Decision {
  */
 export interface TraceStep {
   step: string;
-  matched: boolean;
-  rule?: string;
-  value?: any;
+  timestamp: number;
+  duration: number;
+  input?: any;
+  output?: any;
+  passed: boolean;
 }
 
 /**

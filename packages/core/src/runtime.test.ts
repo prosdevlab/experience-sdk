@@ -175,13 +175,34 @@ describe('ExperienceRuntime', () => {
       });
     });
 
-    it('should emit evaluated event', () => {
+    it('should emit evaluated event with decision and experience', async () => {
+      await runtime.init();
+
+      // Register an experience so we have something to evaluate
+      runtime.register('test-banner', {
+        type: 'banner',
+        targeting: { url: { contains: '/' } },
+        content: {
+          title: 'Test',
+          message: 'Message',
+        },
+      });
+
       const evaluatedHandler = vi.fn();
       runtime.on('experiences:evaluated', evaluatedHandler);
 
       runtime.evaluate();
 
       expect(evaluatedHandler).toHaveBeenCalledOnce();
+      const emittedData = evaluatedHandler.mock.calls[0][0];
+      expect(emittedData).toHaveProperty('decision');
+      expect(emittedData).toHaveProperty('experience');
+      expect(emittedData.decision).toHaveProperty('show', true);
+      expect(emittedData.decision).toHaveProperty('reasons');
+      // Experience exists because we registered one above
+      expect(emittedData.experience).toBeDefined();
+      expect(emittedData.experience).toHaveProperty('id', 'test-banner');
+      expect(emittedData.experience).toHaveProperty('type', 'banner');
     });
 
     it('should store decision history', () => {
@@ -427,7 +448,9 @@ describe('ExperienceRuntime', () => {
   });
 
   describe('frequency targeting', () => {
-    it('should track frequency rule in trace', () => {
+    it('should track frequency rule in trace', async () => {
+      await runtime.init();
+
       runtime.register('limited', {
         type: 'banner',
         targeting: {},
@@ -440,8 +463,8 @@ describe('ExperienceRuntime', () => {
 
       const decision = runtime.evaluate();
 
-      expect(decision.trace.some((step) => step.step === 'check-frequency-rule')).toBe(true);
-      expect(decision.reasons.some((r) => r.includes('Frequency rule'))).toBe(true);
+      expect(decision.trace.some((step) => step.step === 'check-frequency-cap')).toBe(true);
+      expect(decision.reasons.some((r) => r.includes('Frequency cap'))).toBe(true);
     });
   });
 

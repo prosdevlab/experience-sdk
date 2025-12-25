@@ -202,7 +202,7 @@ describe('Frequency Plugin', () => {
         },
       };
 
-      sdk.emit('experiences:evaluated', decision);
+      sdk.emit('experiences:evaluated', { decision });
 
       expect(sdk.frequency.getImpressionCount('welcome-banner')).toBe(1);
     });
@@ -223,7 +223,7 @@ describe('Frequency Plugin', () => {
         },
       };
 
-      sdk.emit('experiences:evaluated', decision);
+      sdk.emit('experiences:evaluated', { decision });
 
       expect(sdk.frequency.getImpressionCount('welcome-banner')).toBe(0);
     });
@@ -244,7 +244,7 @@ describe('Frequency Plugin', () => {
         },
       };
 
-      sdk.emit('experiences:evaluated', decision);
+      sdk.emit('experiences:evaluated', { decision });
 
       // Should not throw or record
       expect(sdk.frequency.getImpressionCount('any-experience')).toBe(0);
@@ -269,7 +269,7 @@ describe('Frequency Plugin', () => {
         },
       };
 
-      sdk.emit('experiences:evaluated', decision);
+      sdk.emit('experiences:evaluated', { decision });
 
       expect(sdk.frequency.getImpressionCount('welcome-banner')).toBe(0);
     });
