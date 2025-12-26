@@ -10,6 +10,14 @@ describe('Frequency Plugin', () => {
   let sdk: SDKWithFrequency;
 
   beforeEach(() => {
+    // Clear any existing storage to avoid pollution between tests
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.clear();
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
+
     // Use memory storage for tests
     sdk = new SDK({
       frequency: { enabled: true },
@@ -131,11 +139,11 @@ describe('Frequency Plugin', () => {
 
       // Mock Date.now() for first impression (25 hours ago - outside window)
       vi.spyOn(Date, 'now').mockReturnValue(now - 25 * 60 * 60 * 1000);
-      sdk.frequency.recordImpression('welcome-banner');
+      sdk.frequency.recordImpression('welcome-banner', 'day');
 
       // Mock Date.now() for second impression (now - inside window)
       vi.spyOn(Date, 'now').mockReturnValue(now);
-      sdk.frequency.recordImpression('welcome-banner');
+      sdk.frequency.recordImpression('welcome-banner', 'day');
 
       // Only 1 impression within last 24 hours
       expect(sdk.frequency.hasReachedCap('welcome-banner', 2, 'day')).toBe(false);
@@ -149,12 +157,12 @@ describe('Frequency Plugin', () => {
 
       // Record 2 impressions 8 days ago (outside week window)
       vi.spyOn(Date, 'now').mockReturnValue(now - 8 * 24 * 60 * 60 * 1000);
-      sdk.frequency.recordImpression('welcome-banner');
-      sdk.frequency.recordImpression('welcome-banner');
+      sdk.frequency.recordImpression('welcome-banner', 'week');
+      sdk.frequency.recordImpression('welcome-banner', 'week');
 
       // Record 1 impression 3 days ago (inside week window)
       vi.spyOn(Date, 'now').mockReturnValue(now - 3 * 24 * 60 * 60 * 1000);
-      sdk.frequency.recordImpression('welcome-banner');
+      sdk.frequency.recordImpression('welcome-banner', 'week');
 
       // Current time
       vi.spyOn(Date, 'now').mockReturnValue(now);
@@ -172,7 +180,7 @@ describe('Frequency Plugin', () => {
       // Record 3 impressions within last day
       for (let i = 0; i < 3; i++) {
         vi.spyOn(Date, 'now').mockReturnValue(now - i * 60 * 60 * 1000); // Each hour
-        sdk.frequency.recordImpression('welcome-banner');
+        sdk.frequency.recordImpression('welcome-banner', 'day');
       }
 
       vi.spyOn(Date, 'now').mockReturnValue(now);
@@ -276,8 +284,8 @@ describe('Frequency Plugin', () => {
   });
 
   describe('Storage Integration', () => {
-    it('should persist impressions across SDK instances', () => {
-      // Record impression in first instance
+    it('should persist impressions across SDK instances (session storage)', () => {
+      // Record impression in first instance (uses sessionStorage)
       sdk.frequency.recordImpression('welcome-banner');
       expect(sdk.frequency.getImpressionCount('welcome-banner')).toBe(1);
 
@@ -289,17 +297,18 @@ describe('Frequency Plugin', () => {
       sdk2.use(storagePlugin);
       sdk2.use(frequencyPlugin);
 
-      // Impressions should NOT persist (memory backend is per-instance)
-      expect(sdk2.frequency.getImpressionCount('welcome-banner')).toBe(0);
+      // Impressions SHOULD persist (sessionStorage is shared)
+      expect(sdk2.frequency.getImpressionCount('welcome-banner')).toBe(1);
     });
 
     it('should use namespaced storage keys', () => {
       sdk.frequency.recordImpression('welcome-banner');
 
-      // Check storage directly
-      const storageData = sdk.storage.get('experiences:frequency:welcome-banner');
+      // Check sessionStorage directly (frequency plugin uses sessionStorage for 'session' per)
+      const storageKey = 'experiences:frequency:welcome-banner';
+      const storageData = JSON.parse(sessionStorage.getItem(storageKey) || '{}');
       expect(storageData).toBeDefined();
-      expect((storageData as { count: number }).count).toBe(1);
+      expect(storageData.count).toBe(1);
     });
   });
 
@@ -339,7 +348,8 @@ describe('Frequency Plugin', () => {
       expect(sdk.frequency.getImpressionCount('welcome-banner')).toBe(5);
 
       // Check storage for cleaned impressions array
-      const storageData = sdk.storage.get('experiences:frequency:welcome-banner') as {
+      const storageKey = 'experiences:frequency:welcome-banner';
+      const storageData = JSON.parse(sessionStorage.getItem(storageKey) || '{}') as {
         impressions: number[];
       };
       // Should only keep impressions from last 7 days (2 recent ones)

@@ -1,334 +1,192 @@
-import { BannerDemo } from '../../components/BannerDemo';
+# Banner Examples
 
-# Banner Experience Demo
+The Experience SDK supports banner-style experiences with targeting, frequency capping, and full explainability.
 
-See the Experience SDK decision engine in action with a live banner experience.
-
-## Interactive Demo
-
-This demo showcases a **Welcome Banner** with session-based frequency capping (3 impressions max).
-
-The banner automatically appears at the **top of the page** on your first visit. To test the frequency cap:
-1. Navigate to another page (e.g., [Home](/) or [Getting Started](/getting-started))
-2. Return to this demo page
-3. Each page load counts as an impression
-4. After 3 visits, the banner will no longer appear
-
-Watch the **Reasons** section below to see the explainability in action!
-
-<BannerDemo />
-
-## What Makes This Different?
-
-Unlike traditional experience platforms, Experience SDK provides **complete explainability**:
-
-### 1. Human-Readable Reasons
-Every decision includes plain English explanations:
-- ✅ "URL matches targeting rule"
-- ✅ "Frequency cap not reached (2/3 this session)"
-- ❌ "Frequency cap reached (3/3 this session)"
-
-### 2. Machine-Readable Trace
-Step-by-step execution trace with timing:
-- Which rules were evaluated
-- What the input/output was
-- How long each step took (milliseconds)
-- Whether it passed or failed
-
-### 3. Full Context
-Complete snapshot of the evaluation context:
-- URL being evaluated
-- Timestamp
-- Custom data (user properties, segments, etc.)
-
-## How Frequency Capping Works
-
-The demo uses **session-based** frequency capping:
-
-1. **First page load** (0/3 → 1/3)
-   - Banner shows at the top of the page
-   - Impression recorded to `sessionStorage`
-   - Reasons: "Frequency cap not reached (1/3 this session)"
-
-2. **Subsequent page loads** (1/3 → 2/3 → 3/3)
-   - Navigate away and return to increment the counter
-   - Banner continues to show until cap reached
-
-3. **After cap reached** (3/3)
-   - Banner no longer appears
-   - Reasons: "Frequency cap reached (3/3 this session)"
-
-4. **Reset button**
-   - Clears `sessionStorage` for testing purposes
-   - Starts counter over at 0/3
-
-**Note**: Session caps reset when you close the browser tab. For persistent caps (daily/weekly), use `localStorage` with `per: 'day'` or `per: 'week'`.
-
-## Configuration for This Demo
+## Basic Example
 
 ```typescript
+import { createInstance } from '@prosdevlab/experience-sdk';
+
+// Create SDK instance with banner plugin
+const experiences = createInstance({ debug: true });
+
+// Register a welcome banner
 experiences.register('welcome-banner', {
   type: 'banner',
   targeting: {
-    url: { contains: '/' }  // Show on all pages
+    url: { contains: '/' }
   },
   content: {
-    title: '👋 Welcome to Experience SDK',
-    message: 'See how explainable client-side experiences work in real-time',
-    button: {
-      text: 'View Docs',
-      url: '/getting-started'
-    }
+    title: '👋 Welcome!',
+    message: 'Thanks for visiting our site',
+    buttons: [
+      {
+        text: 'Get Started',
+        url: '/getting-started',
+        variant: 'primary'
+      }
+    ],
+    dismissable: true
   },
   frequency: {
     max: 3,
     per: 'session'
   }
 });
+
+// Evaluate and show
+const decision = experiences.evaluate();
+console.log(decision.reasons); // See why it was shown or hidden
 ```
 
-## Tracking Banner Actions
+## Multiple Buttons
 
-The banner plugin automatically emits events that you can listen to for tracking and analytics:
-
-### Basic Event Tracking
+Banners can have multiple buttons with different visual variants:
 
 ```typescript
-// Track when banner is shown
-experiences.on('experiences:evaluated', ({ decision, experience }) => {
-  if (decision.show && experience?.type === 'banner') {
-    console.log(`Banner "${experience.id}" shown`);
-    console.log('Reasons:', decision.reasons);
-  }
-});
-
-// Track button clicks
-experiences.on('experiences:action', ({ experienceId, action, url }) => {
-  console.log(`User clicked "${action}" on "${experienceId}"`);
-  console.log('Navigating to:', url);
-});
-
-// Track dismissals
-experiences.on('experiences:dismissed', ({ experienceId }) => {
-  console.log(`User dismissed "${experienceId}"`);
-});
-```
-
-### Integrating with jstag3
-
-Send experience events to Lytics via jstag3:
-
-```typescript
-// Track impressions
-experiences.on('experiences:evaluated', ({ decision, experience }) => {
-  if (decision.show && experience) {
-    window.jstag.send('experience_shown', {
-      experience_id: experience.id,
-      experience_type: experience.type,
-      reasons: decision.reasons.join(', ')
-    });
-  }
-});
-
-// Track button clicks
-experiences.on('experiences:action', ({ experienceId, action, url }) => {
-  window.jstag.send('experience_action', {
-    experience_id: experienceId,
-    action: action,
-    destination_url: url
-  });
-});
-
-// Track dismissals
-experiences.on('experiences:dismissed', ({ experienceId }) => {
-  window.jstag.send('experience_dismissed', {
-    experience_id: experienceId
-  });
-});
-```
-
-### Multiple Analytics Platforms
-
-The event-driven architecture allows multiple listeners:
-
-```typescript
-// Google Analytics
-experiences.on('experiences:action', ({ experienceId, action }) => {
-  gtag('event', 'banner_action', {
-    experience_id: experienceId,
-    action: action
-  });
-});
-
-// Segment
-experiences.on('experiences:action', ({ experienceId, action }) => {
-  analytics.track('Banner Action', {
-    experienceId,
-    action
-  });
-});
-
-// Custom API endpoint
-experiences.on('experiences:action', async ({ experienceId, action }) => {
-  await fetch('/api/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ experienceId, action })
-  });
-});
-```
-
-### Custom Actions
-
-Configure custom action identifiers for specific behaviors:
-
-```typescript
-// Register banner with custom action
 experiences.register('cookie-consent', {
   type: 'banner',
-  targeting: { url: { contains: '/' } },
   content: {
     message: 'We use cookies to improve your experience',
-    button: {
-      text: 'Accept Cookies',
-      action: 'accept-cookies' // Custom action identifier
-    }
-  },
-  frequency: { max: 1, per: 'session' }
-});
-
-// Handle custom action
-experiences.on('experiences:action', ({ action }) => {
-  if (action === 'accept-cookies') {
-    // Set cookie consent
-    document.cookie = 'cookies_accepted=true; max-age=31536000';
-    
-    // Initialize analytics
-    initializeAnalytics();
-    
-    // Track acceptance
-    gtag('event', 'cookie_consent_accepted');
+    buttons: [
+      {
+        text: 'Accept all',
+        action: 'accept-all',
+        variant: 'primary'
+      },
+      {
+        text: 'Reject',
+        action: 'reject',
+        variant: 'secondary'
+      },
+      {
+        text: 'Preferences',
+        action: 'preferences',
+        variant: 'link'
+      }
+    ],
+    position: 'bottom'
   }
 });
 ```
 
-## Why Event-Driven?
+Button variants:
+- **primary** - Prominent blue button for main actions
+- **secondary** - Subtle gray button for secondary actions
+- **link** - Text link style for tertiary actions
 
-Unlike callback-based approaches (e.g., Pathfora), our event-driven architecture provides:
+## Multiple Banners
 
-- **Multiple Consumers** - Many listeners can react to one event (jstag3, GA, Segment, custom code)
-- **Decoupled** - Banner plugin doesn't know about tracking logic
-- **Serializable Config** - No function references in config (JSON/CMS-friendly)
-- **Testable** - Easy to mock and verify events
-- **Composable** - Add/remove listeners dynamically
+You can display multiple banners at different positions:
 
-**Pathfora (Callbacks):**
-```javascript
-// ❌ Not serializable, single consumer, tightly coupled
-{
-  confirmAction: {
-    callback: function(event, payload) {
-      // MUST define all logic here
-      analytics.track('Click', payload);
-      jstag.send('click', payload);
-      window.location = '/products';
-    }
-  }
-}
-```
-
-**Our SDK (Events):**
 ```typescript
-// ✅ Serializable, multiple consumers, decoupled
-{
-  button: {
-    text: 'Shop Now',
-    action: 'shop-cta',
-    url: '/products'
-  }
-}
-
-// Listener 1: Analytics
-experiences.on('experiences:action', ({ action }) => {
-  analytics.track('Click', { action });
-});
-
-// Listener 2: jstag3
-experiences.on('experiences:action', ({ action }) => {
-  jstag.send('click', { action });
-});
-
-// URL navigation happens automatically
-```
-
----
-
-See the [Events Reference](/reference/events) for comprehensive event documentation.
-
-## More Banner Examples
-
-Want to see different banner configurations? Here are common patterns:
-
-### Cookie Banner (1x per day)
-```typescript
-{
-  content: { 
-    message: '🍪 This site uses cookies to improve your experience',
-    button: {
-      text: 'Accept',
-      action: 'accept-cookies'
-    }
-  },
-  frequency: { max: 1, per: 'day' },
-  targeting: { url: { contains: '/' } }
-}
-```
-
-### Announcement (5x per session)
-```typescript
-{
+// Top banner
+experiences.register('welcome', {
+  type: 'banner',
   content: {
-    title: '🎉 New Feature Release',
-    message: 'Check out our latest updates',
-    button: {
-      text: 'Learn More',
-      url: '/blog/new-features'
-    }
+    message: 'Welcome!',
+    position: 'top'
   },
-  frequency: { max: 5, per: 'session' },
-  targeting: { url: { contains: '/dashboard' } }
-}
-```
+  priority: 50
+});
 
-### Flash Sale (2x per session, urgency)
-```typescript
-{
+// Bottom banner
+experiences.register('cookie-notice', {
+  type: 'banner',
   content: {
-    title: '⚡️ Flash Sale',
-    message: '50% off - Today only!',
-    button: {
-      text: 'Shop Now',
-      url: '/products'
-    }
+    message: 'We use cookies',
+    position: 'bottom'
   },
-  frequency: { max: 2, per: 'session' },
-  targeting: { url: { contains: '/products' } }
+  priority: 100
+});
+
+// Evaluate all experiences
+const decisions = experiences.evaluateAll();
+```
+
+## Banner Configuration
+
+### Content Options
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `title` | `string` | Optional banner title |
+| `message` | `string` | Banner message (required) |
+| `buttons` | `array` | Array of button configurations |
+| `dismissable` | `boolean` | Can user dismiss? (default: `true`) |
+| `position` | `'top' \| 'bottom'` | Banner position (default: `'top'`) |
+
+### Button Options
+
+```typescript
+buttons: [{
+  text: string;                            // Button label (required)
+  action?: string;                         // Custom action name
+  url?: string;                            // Navigate on click
+  variant?: 'primary' | 'secondary' | 'link'; // Visual style (default: 'primary')
+  metadata?: Record<string, any>;          // Custom metadata
+}]
+```
+
+### Responsive Layout
+
+Buttons automatically adapt to screen size:
+- **Desktop**: Buttons displayed inline horizontally
+- **Mobile**: Buttons stack vertically for better touch interaction
+
+## Frequency Capping
+
+Control how often banners appear:
+
+```typescript
+frequency: {
+  max: 3,              // Maximum impressions
+  per: 'session'       // 'session' | 'day' | 'week'
 }
 ```
 
-## Use Cases
+## Targeting
 
-This explainability is perfect for:
-- 🐛 **Debugging** - "Why didn't my banner show?"
-- 📊 **A/B Testing** - Understand decision logic
-- 🔍 **Compliance** - Audit trail for data/privacy banners
-- 👥 **Support** - Help users understand experience behavior
-- 🧪 **Testing** - Validate targeting rules before production
+Show banners based on URL patterns:
+
+```typescript
+targeting: {
+  url: {
+    contains: '/products',  // URL contains string
+    equals: '/about',       // Exact match
+    matches: /^\/blog/      // Regex pattern
+  }
+}
+```
+
+## Events
+
+Listen to banner interactions:
+
+```typescript
+// Banner shown
+experiences.on('experiences:shown', ({ experienceId }) => {
+  console.log(`Banner shown: ${experienceId}`);
+});
+
+// Banner dismissed
+experiences.on('experiences:dismissed', ({ experienceId }) => {
+  console.log(`Banner dismissed: ${experienceId}`);
+});
+
+// Button clicked
+experiences.on('experiences:action', ({ experienceId, action, variant, metadata }) => {
+  console.log(`Action: ${action}, Variant: ${variant}`);
+  
+  // Access custom metadata if provided
+  if (metadata) {
+    console.log('Metadata:', metadata);
+  }
+});
+```
 
 ## Next Steps
 
-- [Getting Started](/getting-started) - Install and setup
-- [API Reference](/api) - Complete API documentation
-- [Demo Overview](/demo) - Learn more about the demo
-
-
+- [API Reference](/reference) - Complete API documentation
+- [Events](/reference/events) - All available events
+- [Getting Started](/getting-started) - Installation guide

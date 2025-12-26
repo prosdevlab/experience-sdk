@@ -14,12 +14,15 @@ export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
 export interface BannerContent {
   title?: string;
   message: string;
-  button?: {
+  buttons?: Array<{
     text: string;
-    url?: string;
     action?: string;
-  };
+    url?: string;
+    variant?: 'primary' | 'secondary' | 'link';
+    metadata?: Record<string, any>;
+  }>;
   dismissable?: boolean;
+  position?: 'top' | 'bottom';
 }
 
 /**

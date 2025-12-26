@@ -6,7 +6,7 @@
  */
 
 import type { PluginFunction } from '@lytics/sdk-kit';
-import type { BannerContent, Experience } from '../types';
+import type { BannerContent, Decision, Experience } from '../types';
 
 export interface BannerPluginConfig {
   banner?: {
@@ -48,29 +48,65 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
     },
   });
 
-  let activeBanner: HTMLElement | null = null;
+  // Track multiple active banners by experience ID
+  const activeBanners = new Map<string, HTMLElement>();
 
   /**
    * Create banner DOM element
    */
   function createBannerElement(experience: Experience): HTMLElement {
     const content = experience.content as BannerContent;
-    const position = config.get('banner.position') ?? 'top';
+    // Allow per-experience position override, fall back to global config
+    const position = content.position ?? config.get('banner.position') ?? 'top';
     const dismissable = content.dismissable ?? config.get('banner.dismissable') ?? true;
     const zIndex = config.get('banner.zIndex') ?? 10000;
+
+    // Detect dark mode
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    // Theme-aware colors - professional subtle style
+    const bgColor = isDarkMode ? '#1f2937' : '#f9fafb';
+    const textColor = isDarkMode ? '#f3f4f6' : '#111827';
+    const borderColor = isDarkMode ? '#374151' : '#e5e7eb';
+    const shadowColor = isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)';
 
     // Create banner container
     const banner = document.createElement('div');
     banner.setAttribute('data-experience-id', experience.id);
+
+    // Add responsive media query styles
+    const styleId = `banner-responsive-${experience.id}`;
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @media (max-width: 640px) {
+          [data-experience-id="${experience.id}"] {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          [data-experience-id="${experience.id}"] > div:last-child {
+            width: 100%;
+            flex-direction: column !important;
+          }
+          [data-experience-id="${experience.id}"] button {
+            width: 100%;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     banner.style.cssText = `
       position: fixed;
       ${position}: 0;
       left: 0;
       right: 0;
-      background: #007bff;
-      color: #ffffff;
+      background: ${bgColor};
+      color: ${textColor};
       padding: 16px 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      border-${position === 'top' ? 'bottom' : 'top'}: 1px solid ${borderColor};
+      box-shadow: 0 ${position === 'top' ? '1' : '-1'}px 3px 0 ${shadowColor};
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
       line-height: 1.5;
@@ -100,51 +136,97 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
 
     banner.appendChild(contentDiv);
 
-    // Create button container for CTA and/or dismiss
+    // Create button container for actions and/or dismiss
     const buttonContainer = document.createElement('div');
-    buttonContainer.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+    buttonContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    `;
 
-    // Add CTA button if present
-    if (content.button) {
-      const ctaButton = document.createElement('button');
-      ctaButton.textContent = content.button.text;
-      ctaButton.style.cssText = `
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        color: #ffffff;
-        padding: 8px 16px;
+    // Helper function to create button with variant styling
+    function createButton(buttonConfig: {
+      text: string;
+      action?: string;
+      url?: string;
+      variant?: 'primary' | 'secondary' | 'link';
+      metadata?: Record<string, unknown>;
+    }): HTMLButtonElement {
+      const button = document.createElement('button');
+      button.textContent = buttonConfig.text;
+
+      const variant = buttonConfig.variant || 'primary';
+
+      // Variant-based styling
+      let bg: string, hoverBg: string, textColor: string, border: string;
+
+      if (variant === 'primary') {
+        bg = isDarkMode ? '#3b82f6' : '#2563eb';
+        hoverBg = isDarkMode ? '#2563eb' : '#1d4ed8';
+        textColor = '#ffffff';
+        border = 'none';
+      } else if (variant === 'secondary') {
+        bg = isDarkMode ? '#374151' : '#ffffff';
+        hoverBg = isDarkMode ? '#4b5563' : '#f9fafb';
+        textColor = isDarkMode ? '#f3f4f6' : '#374151';
+        border = isDarkMode ? '1px solid #4b5563' : '1px solid #d1d5db';
+      } else {
+        // 'link'
+        bg = 'transparent';
+        hoverBg = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+        textColor = isDarkMode ? '#93c5fd' : '#2563eb';
+        border = 'none';
+      }
+
+      button.style.cssText = `
+        background: ${bg};
+        border: ${border};
+        color: ${textColor};
+        padding: ${variant === 'link' ? '4px 8px' : '8px 16px'};
         font-size: 14px;
-        font-weight: 500;
-        border-radius: 4px;
+        font-weight: ${variant === 'link' ? '400' : '500'};
+        border-radius: 6px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        text-decoration: ${variant === 'link' ? 'underline' : 'none'};
       `;
 
-      ctaButton.addEventListener('mouseenter', () => {
-        ctaButton.style.background = 'rgba(255, 255, 255, 0.3)';
+      button.addEventListener('mouseenter', () => {
+        button.style.background = hoverBg;
       });
 
-      ctaButton.addEventListener('mouseleave', () => {
-        ctaButton.style.background = 'rgba(255, 255, 255, 0.2)';
+      button.addEventListener('mouseleave', () => {
+        button.style.background = bg;
       });
 
-      ctaButton.addEventListener('click', () => {
+      button.addEventListener('click', () => {
         // Emit action event
         instance.emit('experiences:action', {
           experienceId: experience.id,
           type: 'banner',
-          action: content.button?.action,
-          url: content.button?.url,
+          action: buttonConfig.action,
+          url: buttonConfig.url,
+          metadata: buttonConfig.metadata,
+          variant: variant,
           timestamp: Date.now(),
         });
 
         // Navigate if URL provided
-        if (content.button?.url) {
-          window.location.href = content.button.url;
+        if (buttonConfig.url) {
+          window.location.href = buttonConfig.url;
         }
       });
 
-      buttonContainer.appendChild(ctaButton);
+      return button;
+    }
+
+    // Add buttons from buttons array
+    if (content.buttons && content.buttons.length > 0) {
+      content.buttons.forEach((buttonConfig) => {
+        const button = createButton(buttonConfig);
+        buttonContainer.appendChild(button);
+      });
     }
 
     // Add dismiss button if dismissable
@@ -152,16 +234,19 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       const closeButton = document.createElement('button');
       closeButton.innerHTML = '&times;';
       closeButton.setAttribute('aria-label', 'Close banner');
+
+      const closeColor = isDarkMode ? '#9ca3af' : '#6b7280';
+
       closeButton.style.cssText = `
         background: transparent;
         border: none;
-        color: inherit;
-        font-size: 28px;
+        color: ${closeColor};
+        font-size: 24px;
         line-height: 1;
         cursor: pointer;
         padding: 0;
         margin: 0;
-        opacity: 0.8;
+        opacity: 0.7;
         transition: opacity 0.2s;
       `;
 
@@ -170,11 +255,11 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       });
 
       closeButton.addEventListener('mouseleave', () => {
-        closeButton.style.opacity = '0.8';
+        closeButton.style.opacity = '0.7';
       });
 
       closeButton.addEventListener('click', () => {
-        remove();
+        remove(experience.id);
         instance.emit('experiences:dismissed', {
           experienceId: experience.id,
           type: 'banner',
@@ -193,9 +278,9 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
    * Show a banner experience
    */
   function show(experience: Experience): void {
-    // Remove any existing banner first
-    if (activeBanner) {
-      remove();
+    // If banner already showing for this experience, skip
+    if (activeBanners.has(experience.id)) {
+      return;
     }
 
     // Only show if we're in a browser environment
@@ -205,7 +290,7 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
 
     const banner = createBannerElement(experience);
     document.body.appendChild(banner);
-    activeBanner = banner;
+    activeBanners.set(experience.id, banner);
 
     instance.emit('experiences:shown', {
       experienceId: experience.id,
@@ -215,20 +300,32 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   }
 
   /**
-   * Remove the active banner
+   * Remove a banner by experience ID (or all if no ID provided)
    */
-  function remove(): void {
-    if (activeBanner?.parentNode) {
-      activeBanner.parentNode.removeChild(activeBanner);
-      activeBanner = null;
+  function remove(experienceId?: string): void {
+    if (experienceId) {
+      // Remove specific banner
+      const banner = activeBanners.get(experienceId);
+      if (banner?.parentNode) {
+        banner.parentNode.removeChild(banner);
+      }
+      activeBanners.delete(experienceId);
+    } else {
+      // Remove all banners
+      for (const [id, banner] of activeBanners.entries()) {
+        if (banner?.parentNode) {
+          banner.parentNode.removeChild(banner);
+        }
+        activeBanners.delete(id);
+      }
     }
   }
 
   /**
-   * Check if a banner is currently showing
+   * Check if any banner is currently showing
    */
   function isShowing(): boolean {
-    return activeBanner !== null;
+    return activeBanners.size > 0;
   }
 
   // Expose banner API
@@ -243,19 +340,23 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   // Auto-show banner on experiences:evaluated event
   instance.on('experiences:evaluated', (payload: unknown) => {
     // Handle both single decision and array of decisions
+    // evaluate() emits: { decision, experience }
+    // evaluateAll() emits: [{ decision, experience }, ...]
     const items = Array.isArray(payload) ? payload : [payload];
 
     for (const item of items) {
-      const decision = item?.decision || item;
-      const experience = item?.experience;
+      // Item is { decision, experience }
+      const typedItem = item as { decision?: Decision; experience?: Experience };
+      const decision = typedItem.decision;
+      const experience = typedItem.experience;
 
       // Only handle banner-type experiences
       if (experience?.type === 'banner') {
         if (decision?.show) {
           show(experience);
-        } else if (activeBanner) {
-          // Hide banner if decision says don't show
-          remove();
+        } else if (experience.id && activeBanners.has(experience.id)) {
+          // Hide specific banner if decision says don't show
+          remove(experience.id);
         }
       }
     }
