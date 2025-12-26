@@ -1,7 +1,9 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig((options) => ({
-  entry: ['src/index.ts'],
+  entry: {
+    'experience-sdk': 'src/index.ts',
+  },
   // Only build ESM in watch mode (faster, no bundling issues)
   // Build both ESM and IIFE in production
   format: options.watch ? ['esm'] : ['esm', 'iife'],

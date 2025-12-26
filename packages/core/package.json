@@ -4,14 +4,15 @@
   "description": "A lightweight, explainable client-side experience runtime",
   "private": false,
   "type": "module",
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/experience-sdk.js",
+  "module": "./dist/experience-sdk.js",
+  "types": "./dist/experience-sdk.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
-    }
+      "types": "./dist/experience-sdk.d.ts",
+      "import": "./dist/experience-sdk.js"
+    },
+    "./dist/experience-sdk.global.js": "./dist/experience-sdk.global.js"
   },
   "files": [
     "dist"
