@@ -12,6 +12,13 @@
       "import": "./dist/index.js"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prosdevlab/experience-sdk.git",
+    "directory": "packages/plugins"
+  },
+  "author": "prosdevlab",
+  "license": "MIT",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
