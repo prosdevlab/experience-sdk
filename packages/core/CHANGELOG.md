@@ -1,5 +1,12 @@
 # @prosdevlab/experience-sdk
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [41c0aa5]
+  - @prosdevlab/experience-sdk-plugins@0.1.3
+
 ## 0.1.3
 
 ### Patch Changes
