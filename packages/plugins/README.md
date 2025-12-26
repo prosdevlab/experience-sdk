@@ -16,6 +16,8 @@ Renders banner experiences in the DOM with automatic positioning, theming, and r
 - Automatic theme detection (light/dark mode)
 - Top/bottom positioning
 - Dismissable with close button
+- **CSS customization** via `className` and `style` props
+- Stable `.xp-*` CSS classes for styling
 
 ```typescript
 import { createInstance, bannerPlugin } from '@prosdevlab/experience-sdk-plugins';
@@ -37,6 +39,33 @@ sdk.banner.show({
   }
 });
 ```
+
+**Customization:**
+
+The banner plugin uses `.xp-*` CSS classes and supports custom styling:
+
+```typescript
+// With Tailwind
+content: {
+  message: 'Flash Sale!',
+  className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white',
+  buttons: [{
+    text: 'Shop Now',
+    className: 'bg-white text-blue-600 hover:bg-gray-100'
+  }]
+}
+
+// With inline styles
+content: {
+  message: 'Flash Sale!',
+  style: {
+    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+    color: 'white'
+  }
+}
+```
+
+See the [Plugins documentation](https://prosdevlab.github.io/experience-sdk/reference/plugins#customization) for more customization examples.
 
 ### Frequency Plugin
 
