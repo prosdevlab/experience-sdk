@@ -20,9 +20,31 @@ export interface BannerContent {
     url?: string;
     variant?: 'primary' | 'secondary' | 'link';
     metadata?: Record<string, any>;
+    className?: string;
+    style?: Record<string, string>;
   }>;
   dismissable?: boolean;
   position?: 'top' | 'bottom';
+  className?: string;
+  style?: Record<string, string>;
+}
+
+/**
+ * Modal content configuration
+ */
+export interface ModalContent {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+/**
+ * Tooltip content configuration
+ */
+export interface TooltipContent {
+  message: string;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 /**

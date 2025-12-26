@@ -78,52 +78,24 @@ export interface FrequencyConfig {
   per: 'session' | 'day' | 'week';
 }
 
+// Import plugin-specific content types from plugins package
+// (Core depends on plugins, so plugins owns these definitions)
+import type {
+  BannerContent,
+  ModalContent,
+  TooltipContent,
+} from '@prosdevlab/experience-sdk-plugins';
+
 /**
  * Experience Content (type-specific)
  *
  * Union type for all possible experience content types.
+ * Content types are defined in the plugins package.
  */
 export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
 
-/**
- * Banner Content
- *
- * Content for banner-type experiences.
- */
-export interface BannerContent {
-  /** Banner title/heading */
-  title: string;
-  /** Banner message/body text */
-  message: string;
-  /** Whether the banner can be dismissed */
-  dismissable?: boolean;
-}
-
-/**
- * Modal Content
- *
- * Content for modal-type experiences.
- */
-export interface ModalContent {
-  /** Modal title */
-  title: string;
-  /** Modal body content */
-  body: string;
-  /** Optional action buttons */
-  actions?: ModalAction[];
-}
-
-/**
- * Tooltip Content
- *
- * Content for tooltip-type experiences.
- */
-export interface TooltipContent {
-  /** Tooltip text */
-  text: string;
-  /** Position relative to target element */
-  position?: 'top' | 'bottom' | 'left' | 'right';
-}
+// Re-export plugin content types for convenience
+export type { BannerContent, ModalContent, TooltipContent };
 
 /**
  * Modal Action Button

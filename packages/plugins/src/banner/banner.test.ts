@@ -92,8 +92,8 @@ describe('Banner Plugin', () => {
       sdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
-      expect(banner.style.top).toBe('0px');
-      expect(banner.style.bottom).toBe('');
+      expect(banner.className).toContain('xp-banner--top');
+      expect(banner.className).not.toContain('xp-banner--bottom');
     });
 
     it('should show banner at bottom position when configured', () => {
@@ -113,8 +113,8 @@ describe('Banner Plugin', () => {
       customSdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
-      expect(banner.style.bottom).toBe('0px');
-      expect(banner.style.top).toBe('');
+      expect(banner.className).toContain('xp-banner--bottom');
+      expect(banner.className).not.toContain('xp-banner--top');
     });
 
     it('should create banner with title and message', () => {
@@ -500,8 +500,8 @@ describe('Banner Plugin', () => {
       const button = banner?.querySelector('button') as HTMLElement;
 
       expect(button).toBeTruthy();
-      // Primary variant should have white text
-      expect(button.style.color).toContain('255'); // rgb(255, 255, 255)
+      // Primary variant should have the correct class
+      expect(button.className).toContain('xp-banner__button--primary');
     });
 
     it('should emit action event with variant and metadata', () => {
@@ -667,7 +667,8 @@ describe('Banner Plugin', () => {
       sdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
-      expect(banner.style.zIndex).toBe('10000');
+      // Default z-index is set via CSS, check that banner has the base class
+      expect(banner.className).toContain('xp-banner');
     });
 
     it('should apply custom z-index', () => {
@@ -704,7 +705,9 @@ describe('Banner Plugin', () => {
       sdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
-      expect(banner.style.position).toBe('fixed');
+      // Position is set via CSS class, check computed style
+      const computedStyle = window.getComputedStyle(banner);
+      expect(computedStyle.position).toBe('fixed');
     });
 
     it('should span full width', () => {
@@ -721,8 +724,155 @@ describe('Banner Plugin', () => {
       sdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
-      expect(banner.style.left).toBe('0px');
-      expect(banner.style.right).toBe('0px');
+      // Width and positioning are set via CSS class, check computed styles
+      const computedStyle = window.getComputedStyle(banner);
+      expect(computedStyle.left).toBe('0px');
+      expect(computedStyle.right).toBe('0px');
+      expect(computedStyle.width).toBe('100%');
+    });
+
+    it('should apply custom className to banner', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          className: 'my-custom-banner custom-class',
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
+      expect(banner.className).toContain('xp-banner');
+      expect(banner.className).toContain('my-custom-banner');
+      expect(banner.className).toContain('custom-class');
+    });
+
+    it('should apply custom inline styles to banner', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          style: {
+            backgroundColor: '#ff0000',
+            padding: '24px',
+            borderRadius: '8px',
+          },
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
+      expect(banner.style.backgroundColor).toBe('rgb(255, 0, 0)');
+      expect(banner.style.padding).toBe('24px');
+      expect(banner.style.borderRadius).toBe('8px');
+    });
+
+    it('should apply custom className to buttons', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          buttons: [
+            {
+              text: 'Primary Button',
+              variant: 'primary',
+              className: 'my-primary-btn custom-btn',
+            },
+            {
+              text: 'Secondary Button',
+              variant: 'secondary',
+              className: 'my-secondary-btn',
+            },
+          ],
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const buttons = banner?.querySelectorAll('.xp-banner__button');
+
+      expect(buttons?.[0].className).toContain('xp-banner__button--primary');
+      expect(buttons?.[0].className).toContain('my-primary-btn');
+      expect(buttons?.[0].className).toContain('custom-btn');
+
+      expect(buttons?.[1].className).toContain('xp-banner__button--secondary');
+      expect(buttons?.[1].className).toContain('my-secondary-btn');
+    });
+
+    it('should apply custom inline styles to buttons', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          buttons: [
+            {
+              text: 'Styled Button',
+              variant: 'primary',
+              style: {
+                backgroundColor: '#00ff00',
+                color: '#000000',
+                fontWeight: 'bold',
+              },
+            },
+          ],
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const button = banner?.querySelector('.xp-banner__button') as HTMLElement;
+
+      expect(button.style.backgroundColor).toBe('rgb(0, 255, 0)');
+      expect(button.style.color).toBe('rgb(0, 0, 0)');
+      expect(button.style.fontWeight).toBe('bold');
+    });
+
+    it('should combine className and style props', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test message',
+          className: 'custom-banner',
+          style: {
+            backgroundColor: '#0000ff',
+          },
+          buttons: [
+            {
+              text: 'Button',
+              className: 'custom-button',
+              style: {
+                color: '#ffffff',
+              },
+            },
+          ],
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]') as HTMLElement;
+      expect(banner.className).toContain('xp-banner');
+      expect(banner.className).toContain('custom-banner');
+      expect(banner.style.backgroundColor).toBe('rgb(0, 0, 255)');
+
+      const button = banner.querySelector('.xp-banner__button') as HTMLElement;
+      expect(button.className).toContain('xp-banner__button');
+      expect(button.className).toContain('custom-button');
+      expect(button.style.color).toBe('rgb(255, 255, 255)');
     });
   });
 });

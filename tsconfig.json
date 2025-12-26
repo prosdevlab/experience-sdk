@@ -12,12 +12,8 @@
     "lib": ["ES2022", "DOM"],
     "baseUrl": ".",
     "paths": {
-      "@monorepo/core": ["packages/core/src"],
-      "@monorepo/core/*": ["packages/core/src/*"],
-      "@monorepo/utils": ["packages/utils/src"],
-      "@monorepo/utils/*": ["packages/utils/src/*"],
-      "@monorepo/feature-a": ["packages/feature-a/src"],
-      "@monorepo/feature-a/*": ["packages/feature-a/src/*"]
+      "@prosdevlab/experience-sdk": ["packages/core/src"],
+      "@prosdevlab/experience-sdk/*": ["packages/core/src/*"]
     }
   },
   "exclude": ["node_modules"],
