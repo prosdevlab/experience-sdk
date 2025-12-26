@@ -7,6 +7,7 @@
 
 import type { PluginFunction } from '@lytics/sdk-kit';
 import type { BannerContent, Decision, Experience } from '../types';
+import { sanitizeHTML } from '../utils/sanitize';
 
 export interface BannerPluginConfig {
   banner?: {
@@ -292,14 +293,16 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
     if (content.title) {
       const title = document.createElement('h3');
       title.className = 'xp-banner__title';
-      title.textContent = content.title;
+      // Sanitize HTML to prevent XSS attacks
+      title.innerHTML = sanitizeHTML(content.title);
       contentDiv.appendChild(title);
     }
 
     // Add message
     const message = document.createElement('p');
     message.className = 'xp-banner__message';
-    message.textContent = content.message;
+    // Sanitize HTML to prevent XSS attacks
+    message.innerHTML = sanitizeHTML(content.message);
     contentDiv.appendChild(message);
 
     container.appendChild(contentDiv);
