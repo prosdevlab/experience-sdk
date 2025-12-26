@@ -1,5 +1,13 @@
 # @prosdevlab/experience-sdk-plugins
 
+## 0.1.2
+
+### Patch Changes
+
+- a6842e2: Fix npm publishing error by adding repository field to package.json
+
+  - Add repository field required for npm provenance verification
+
 ## 0.1.1
 
 ### Patch Changes
