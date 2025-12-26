@@ -7,7 +7,7 @@
 
 import type { PluginFunction, SDK } from '@lytics/sdk-kit';
 import { type StoragePlugin, storagePlugin } from '@lytics/sdk-kit-plugins';
-import type { TraceStep } from '../types';
+import type { Decision, TraceStep } from '../types';
 
 export interface FrequencyPluginConfig {
   frequency?: {
@@ -213,10 +213,13 @@ export const frequencyPlugin: PluginFunction = (plugin, instance, config) => {
   if (isEnabled()) {
     instance.on('experiences:evaluated', (payload: unknown) => {
       // Handle both single decision and array of decisions
+      // evaluate() emits: { decision, experience }
+      // evaluateAll() emits: [{ decision, experience }, ...]
       const items = Array.isArray(payload) ? payload : [payload];
 
       for (const item of items) {
-        const decision = item?.decision || item;
+        // Item is { decision, experience }
+        const decision = (item as { decision?: Decision }).decision;
 
         // Only record if experience was shown
         if (decision?.show && decision.experienceId) {

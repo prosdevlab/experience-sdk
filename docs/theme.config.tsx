@@ -1,4 +1,3 @@
-import Script from 'next/script';
 import type { DocsThemeConfig } from 'nextra-theme-docs';
 
 const config: DocsThemeConfig = {
@@ -30,7 +29,6 @@ const config: DocsThemeConfig = {
         property="og:description"
         content="A lightweight, explainable client-side experience runtime"
       />
-      <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <style>{`
         /* Fix code blocks with Tailwind */
         code {

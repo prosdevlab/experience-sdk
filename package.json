@@ -14,10 +14,10 @@
     "docs"
   ],
   "scripts": {
-    "build": "turbo build",
+    "build": "turbo build --filter=!docs",
     "build:sdk": "pnpm --filter @prosdevlab/experience-sdk-plugins build && pnpm --filter @prosdevlab/experience-sdk build",
     "build:docs": "pnpm build:sdk && pnpm --filter docs build",
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter=!docs",
     "lint": "turbo lint",
     "test": "vitest run",
     "test:watch": "vitest",

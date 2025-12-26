@@ -262,7 +262,7 @@ describe('Banner Plugin', () => {
       expect(sdk.banner.isShowing()).toBe(true);
     });
 
-    it('should remove existing banner when showing new one', () => {
+    it('should support multiple banners simultaneously', () => {
       const experience1: Experience = {
         id: 'banner-1',
         type: 'banner',
@@ -287,7 +287,8 @@ describe('Banner Plugin', () => {
       expect(document.querySelector('[data-experience-id="banner-1"]')).toBeTruthy();
 
       sdk.banner.show(experience2);
-      expect(document.querySelector('[data-experience-id="banner-1"]')).toBeNull();
+      // Both banners should be present
+      expect(document.querySelector('[data-experience-id="banner-1"]')).toBeTruthy();
       expect(document.querySelector('[data-experience-id="banner-2"]')).toBeTruthy();
     });
 
@@ -455,26 +456,87 @@ describe('Banner Plugin', () => {
   });
 
   describe('CTA Button', () => {
-    it('should render CTA button when provided', () => {
+    it('should render multiple buttons from buttons array', () => {
       const experience: Experience = {
         id: 'test-banner',
         type: 'banner',
         targeting: {},
         content: {
-          message: 'Test message',
-          button: {
-            text: 'Click Me',
-            url: '/test',
-          },
+          message: 'Cookie consent',
+          buttons: [
+            { text: 'Accept all', action: 'accept', variant: 'primary' },
+            { text: 'Reject', action: 'reject', variant: 'secondary' },
+            { text: 'Preferences', action: 'preferences', variant: 'link' },
+          ],
         },
       };
 
       sdk.banner.show(experience);
 
       const banner = document.querySelector('[data-experience-id="test-banner"]');
-      const button = banner?.querySelector('button');
+      const buttons = banner?.querySelectorAll('button');
+
+      // Should have 3 action buttons + 1 dismiss button (default)
+      expect(buttons?.length).toBe(4);
+      expect(buttons?.[0].textContent).toBe('Accept all');
+      expect(buttons?.[1].textContent).toBe('Reject');
+      expect(buttons?.[2].textContent).toBe('Preferences');
+    });
+
+    it('should use default primary variant when not specified', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Test',
+          buttons: [{ text: 'Click Me', action: 'test' }],
+        },
+      };
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const button = banner?.querySelector('button') as HTMLElement;
+
       expect(button).toBeTruthy();
-      expect(button?.textContent).toBe('Click Me');
+      // Primary variant should have white text
+      expect(button.style.color).toContain('255'); // rgb(255, 255, 255)
+    });
+
+    it('should emit action event with variant and metadata', () => {
+      const experience: Experience = {
+        id: 'test-banner',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Cookie consent',
+          buttons: [
+            {
+              text: 'Accept',
+              action: 'accept',
+              variant: 'primary',
+              metadata: { consent_categories: ['all'] },
+            },
+          ],
+        },
+      };
+
+      let emittedEvent: any;
+      sdk.on('experiences:action', (event: any) => {
+        emittedEvent = event;
+      });
+
+      sdk.banner.show(experience);
+
+      const banner = document.querySelector('[data-experience-id="test-banner"]');
+      const button = banner?.querySelector('button') as HTMLElement;
+      button.click();
+
+      expect(emittedEvent).toBeTruthy();
+      expect(emittedEvent.action).toBe('accept');
+      expect(emittedEvent.variant).toBe('primary');
+      expect(emittedEvent.metadata).toEqual({ consent_categories: ['all'] });
     });
 
     it('should not render CTA button when not provided', () => {
@@ -496,7 +558,7 @@ describe('Banner Plugin', () => {
       expect(buttons?.[0].textContent).toBe('×');
     });
 
-    it('should emit experiences:action event when CTA clicked', () => {
+    it('should emit experiences:action event when button clicked', () => {
       const handler = vi.fn();
       sdk.on('experiences:action', handler);
 
@@ -506,11 +568,13 @@ describe('Banner Plugin', () => {
         targeting: {},
         content: {
           message: 'Test message',
-          button: {
-            text: 'Click Me',
-            action: 'test-action',
-            url: '/test',
-          },
+          buttons: [
+            {
+              text: 'Click Me',
+              action: 'test-action',
+              url: '/test',
+            },
+          ],
         },
       };
 
@@ -528,6 +592,8 @@ describe('Banner Plugin', () => {
         type: 'banner',
         action: 'test-action',
         url: '/test',
+        variant: 'primary',
+        metadata: undefined,
         timestamp: expect.any(Number),
       });
     });
@@ -539,9 +605,11 @@ describe('Banner Plugin', () => {
         targeting: {},
         content: {
           message: 'Test message',
-          button: {
-            text: 'Click Me',
-          },
+          buttons: [
+            {
+              text: 'Click Me',
+            },
+          ],
           dismissable: false,
         },
       };
@@ -551,21 +619,23 @@ describe('Banner Plugin', () => {
       const banner = document.querySelector('[data-experience-id="test-banner"]');
       const buttons = banner?.querySelectorAll('button');
 
-      // Should only have CTA button, no dismiss button
+      // Should only have action button, no dismiss button
       expect(buttons?.length).toBe(1);
       expect(buttons?.[0].textContent).toBe('Click Me');
     });
 
-    it('should show both CTA and dismiss button when both provided', () => {
+    it('should show both action and dismiss button when both provided', () => {
       const experience: Experience = {
         id: 'test-banner',
         type: 'banner',
         targeting: {},
         content: {
           message: 'Test message',
-          button: {
-            text: 'Learn More',
-          },
+          buttons: [
+            {
+              text: 'Learn More',
+            },
+          ],
           dismissable: true,
         },
       };
