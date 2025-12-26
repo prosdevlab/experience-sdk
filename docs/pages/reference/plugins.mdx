@@ -138,6 +138,105 @@ experiences.on('experiences:dismissed', ({ experienceId }) => {
 
 See [Banner Examples](/demo/banner) for complete usage examples.
 
+#### Customization
+
+The Experience SDK focuses on **targeting logic**, not visual design. The banner plugin provides minimal, functional default styles that you can customize using CSS.
+
+**CSS Classes**
+
+The banner plugin uses the `.xp-*` namespace for all CSS classes:
+
+- `.xp-banner` - Main container
+- `.xp-banner--top` - Top positioned banner
+- `.xp-banner--bottom` - Bottom positioned banner
+- `.xp-banner__container` - Inner wrapper
+- `.xp-banner__content` - Content section
+- `.xp-banner__title` - Optional title
+- `.xp-banner__message` - Main message text
+- `.xp-banner__buttons` - Buttons container
+- `.xp-banner__button` - Individual button
+- `.xp-banner__button--primary` - Primary button variant
+- `.xp-banner__button--secondary` - Secondary button variant
+- `.xp-banner__button--link` - Link button variant
+- `.xp-banner__close` - Close button
+
+**Use Case 1: User with Tailwind**
+
+Add Tailwind classes via the `className` property:
+
+```typescript
+experiences.register('flash-sale', {
+  type: 'banner',
+  content: {
+    message: 'Flash Sale: 50% Off Everything!',
+    className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white',
+    buttons: [{
+      text: 'Shop Now',
+      url: '/shop',
+      variant: 'primary',
+      className: 'bg-white text-blue-600 hover:bg-gray-100'
+    }]
+  },
+  targeting: { url: { contains: '/shop' } }
+});
+```
+
+**Use Case 2: User with Design System**
+
+Build your own plugin using your design system components:
+
+```typescript
+import { MyBannerComponent } from '@your-org/design-system';
+
+const myBannerPlugin: PluginFunction = (plugin, instance, config) => {
+  instance.on('experiences:evaluated', ({ decision, experience }) => {
+    if (decision.show && experience.type === 'banner') {
+      // Render using your React component
+      ReactDOM.render(
+        <MyBannerComponent {...experience.content} />,
+        document.getElementById('banner-root')
+      );
+    }
+  });
+};
+
+experiences.use(myBannerPlugin);
+```
+
+**Use Case 3: User with CSS Framework**
+
+Add Bootstrap, Material UI, or other framework classes:
+
+```typescript
+experiences.register('alert', {
+  type: 'banner',
+  content: {
+    message: 'Important notice',
+    className: 'alert alert-warning',
+    buttons: [{
+      text: 'Learn More',
+      className: 'btn btn-primary'
+    }]
+  },
+  targeting: {}
+});
+```
+
+**Inline Styles**
+
+For quick overrides, use the `style` property:
+
+```typescript
+content: {
+  message: 'Flash Sale!',
+  style: {
+    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    padding: '24px'
+  }
+}
+```
+
 ---
 
 ### Frequency Plugin
