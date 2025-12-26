@@ -875,4 +875,214 @@ describe('Banner Plugin', () => {
       expect(button.style.color).toBe('rgb(255, 255, 255)');
     });
   });
+
+  describe('HTML Sanitization', () => {
+    it('should sanitize HTML in title to prevent XSS', () => {
+      const experience: Experience = {
+        id: 'xss-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          title: '<script>alert("xss")</script>Safe Title',
+          message: 'Test message',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'xss-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector('[data-experience-id="xss-test"]') as HTMLElement;
+      expect(banner).toBeTruthy();
+
+      const title = banner.querySelector('.xp-banner__title') as HTMLElement;
+      expect(title).toBeTruthy();
+      // Script tag should be stripped
+      expect(title.innerHTML).not.toContain('<script>');
+      expect(title.innerHTML).not.toContain('alert("xss")');
+      // Safe content should remain
+      expect(title.innerHTML).toContain('Safe Title');
+    });
+
+    it('should sanitize HTML in message to prevent XSS', () => {
+      const experience: Experience = {
+        id: 'xss-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Hello <script>alert("xss")</script>World',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'xss-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector('[data-experience-id="xss-test"]') as HTMLElement;
+      expect(banner).toBeTruthy();
+
+      const message = banner.querySelector('.xp-banner__message') as HTMLElement;
+      expect(message).toBeTruthy();
+      // Script tag should be stripped
+      expect(message.innerHTML).not.toContain('<script>');
+      expect(message.innerHTML).not.toContain('alert("xss")');
+      // Safe content should remain
+      expect(message.innerHTML).toContain('Hello');
+      expect(message.innerHTML).toContain('World');
+    });
+
+    it('should allow safe HTML tags in title and message', () => {
+      const experience: Experience = {
+        id: 'html-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          title: '<strong>Flash Sale!</strong>',
+          message: 'Get <em>50% off</em> everything. <a href="/shop">Shop Now</a>',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'html-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector('[data-experience-id="html-test"]') as HTMLElement;
+      expect(banner).toBeTruthy();
+
+      const title = banner.querySelector('.xp-banner__title') as HTMLElement;
+      expect(title.innerHTML).toContain('<strong>Flash Sale!</strong>');
+
+      const message = banner.querySelector('.xp-banner__message') as HTMLElement;
+      expect(message.innerHTML).toContain('<em>50% off</em>');
+      expect(message.innerHTML).toContain('<a href="/shop">Shop Now</a>');
+    });
+
+    it('should strip dangerous tags like iframe and object', () => {
+      const experience: Experience = {
+        id: 'dangerous-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Safe text <iframe src="evil.com"></iframe> more text',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'dangerous-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector('[data-experience-id="dangerous-test"]') as HTMLElement;
+      expect(banner).toBeTruthy();
+      const message = banner.querySelector('.xp-banner__message') as HTMLElement;
+
+      // Dangerous tags should be stripped
+      expect(message.innerHTML).not.toContain('<iframe>');
+      expect(message.innerHTML).not.toContain('evil.com');
+      // Safe content should remain
+      expect(message.innerHTML).toContain('Safe text');
+      expect(message.innerHTML).toContain('more text');
+    });
+
+    it('should strip javascript: URLs from links', () => {
+      const experience: Experience = {
+        id: 'js-url-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message: 'Click <a href="javascript:alert(\'xss\')">here</a>',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'js-url-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector('[data-experience-id="js-url-test"]') as HTMLElement;
+      expect(banner).toBeTruthy();
+      const message = banner.querySelector('.xp-banner__message') as HTMLElement;
+
+      // javascript: URL should be stripped
+      expect(message.innerHTML).not.toContain('javascript:');
+      expect(message.innerHTML).not.toContain('alert');
+      // Link tag should exist but without href
+      expect(message.innerHTML).toContain('<a>here</a>');
+    });
+
+    it('should allow legitimate URLs and paths in links', () => {
+      const experience: Experience = {
+        id: 'legitimate-urls-test',
+        type: 'banner',
+        targeting: {},
+        content: {
+          message:
+            'Visit <a href="/shop">our shop</a>, check out <a href="https://example.com">external</a>, or <a href="mailto:support@example.com">email us</a>',
+        },
+      };
+
+      sdk.emit('experiences:evaluated', {
+        decision: {
+          show: true,
+          experienceId: 'legitimate-urls-test',
+          reasons: [],
+          trace: [],
+          context: {} as any,
+          metadata: {},
+        },
+        experience,
+      });
+
+      const banner = document.querySelector(
+        '[data-experience-id="legitimate-urls-test"]'
+      ) as HTMLElement;
+      expect(banner).toBeTruthy();
+      const message = banner.querySelector('.xp-banner__message') as HTMLElement;
+
+      // Relative paths should work
+      expect(message.innerHTML).toContain('<a href="/shop">our shop</a>');
+      // External URLs should work
+      expect(message.innerHTML).toContain('<a href="https://example.com">external</a>');
+      // mailto: URLs should work
+      expect(message.innerHTML).toContain('<a href="mailto:support@example.com">email us</a>');
+    });
+  });
 });
