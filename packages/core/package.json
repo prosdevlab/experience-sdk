@@ -15,7 +15,8 @@
     "./dist/experience-sdk.global.js": "./dist/experience-sdk.global.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "keywords": [
     "experience",
