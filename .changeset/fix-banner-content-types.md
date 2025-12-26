@@ -3,7 +3,7 @@
 '@prosdevlab/experience-sdk-plugins': patch
 ---
 
-Fix BannerContent type definition and add CSS customization support:
+Fix BannerContent type definition, add CSS customization support, and implement HTML sanitization:
 
 - Add `buttons` array property with variant and metadata support
 - Add `position` property (top/bottom)
@@ -11,7 +11,11 @@ Fix BannerContent type definition and add CSS customization support:
 - Add `className` and `style` props for banner and buttons
 - Update banner plugin to use `.xp-*` CSS classes
 - Provide minimal, functional default styles
+- Add HTML sanitizer for XSS prevention in title and message fields
+- Support safe HTML tags (strong, em, a, br, span, b, i, p)
+- Block dangerous tags and event handlers
+- Sanitize URLs to prevent javascript: and data: attacks
 - Aligns core types with banner plugin implementation
 
-This enables users to customize banners with Tailwind, design systems, or CSS frameworks while maintaining SDK's focus on targeting logic.
+This enables users to customize banners with Tailwind, design systems, or CSS frameworks while maintaining SDK's focus on targeting logic. HTML sanitization ensures safe rendering of user-provided content.
 
