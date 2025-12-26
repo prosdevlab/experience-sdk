@@ -17,7 +17,7 @@ experiences.register('welcome-banner', {
     url: { contains: '/' }
   },
   content: {
-    title: '👋 Welcome!',
+    title: 'Welcome!',
     message: 'Thanks for visiting our site',
     buttons: [
       {
@@ -115,6 +115,8 @@ const decisions = experiences.evaluateAll();
 | `buttons` | `array` | Array of button configurations |
 | `dismissable` | `boolean` | Can user dismiss? (default: `true`) |
 | `position` | `'top' \| 'bottom'` | Banner position (default: `'top'`) |
+| `className` | `string` | Custom CSS class for the banner |
+| `style` | `Record<string, string>` | Inline styles for the banner |
 
 ### Button Options
 
@@ -125,6 +127,8 @@ buttons: [{
   url?: string;                            // Navigate on click
   variant?: 'primary' | 'secondary' | 'link'; // Visual style (default: 'primary')
   metadata?: Record<string, any>;          // Custom metadata
+  className?: string;                      // Custom CSS class
+  style?: Record<string, string>;          // Inline styles
 }]
 ```
 
@@ -158,6 +162,40 @@ targeting: {
   }
 }
 ```
+
+## Customization
+
+Customize banners with your own CSS using `className` or `style` props:
+
+```typescript
+// With Tailwind classes
+experiences.register('promo', {
+  type: 'banner',
+  content: {
+    message: 'Flash Sale: 50% Off!',
+    className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white',
+    buttons: [{
+      text: 'Shop Now',
+      className: 'bg-white text-blue-600 hover:bg-gray-100'
+    }]
+  }
+});
+
+// With inline styles
+experiences.register('custom', {
+  type: 'banner',
+  content: {
+    message: 'Custom styled banner',
+    style: {
+      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      padding: '24px'
+    }
+  }
+});
+```
+
+The banner plugin uses stable `.xp-*` CSS classes that you can target in your stylesheets. See the [Plugins documentation](/reference/plugins#customization) for complete customization guide.
 
 ## Events
 
