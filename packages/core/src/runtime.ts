@@ -5,6 +5,7 @@ import {
   debugPlugin,
   exitIntentPlugin,
   frequencyPlugin,
+  scrollDepthPlugin,
 } from '@prosdevlab/experience-sdk-plugins';
 import type {
   Context,
@@ -47,6 +48,7 @@ export class ExperienceRuntime {
     this.sdk.use(debugPlugin);
     this.sdk.use(frequencyPlugin);
     this.sdk.use(exitIntentPlugin); // NEW: Exit intent plugin
+    this.sdk.use(scrollDepthPlugin); // NEW: Scroll depth plugin
     this.sdk.use(bannerPlugin);
 
     // Listen for trigger events from display condition plugins
