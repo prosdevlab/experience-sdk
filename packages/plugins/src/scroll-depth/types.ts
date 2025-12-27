@@ -1,6 +1,23 @@
 /** @module scrollDepthPlugin */
 
 /**
+ * Scroll Depth Plugin API
+ */
+export interface ScrollDepthPlugin {
+  getMaxPercent(): number;
+  getCurrentPercent(): number;
+  getThresholdsCrossed(): number[];
+  getDevice(): 'mobile' | 'tablet' | 'desktop';
+  getAdvancedMetrics(): {
+    timeOnPage: number;
+    directionChanges: number;
+    timeScrollingUp: number;
+    thresholdTimes: Record<number, number>;
+  } | null;
+  reset(): void;
+}
+
+/**
  * Scroll Depth Plugin Configuration
  *
  * Tracks scroll depth and emits trigger:scrollDepth events when thresholds are crossed.

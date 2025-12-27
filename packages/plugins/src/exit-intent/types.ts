@@ -48,3 +48,12 @@ export interface ExitIntentEvent {
   velocity: number; // Calculated Y velocity
   timeOnPage: number; // Ms user was on page
 }
+
+/**
+ * Exit Intent Plugin API
+ */
+export interface ExitIntentPlugin {
+  isTriggered(): boolean;
+  reset(): void;
+  getPositions(): Array<{ x: number; y: number }>;
+}
