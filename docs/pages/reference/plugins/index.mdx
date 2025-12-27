@@ -1,0 +1,127 @@
+# Plugins Overview
+
+The Experience SDK uses a plugin architecture powered by [@lytics/sdk-kit](https://github.com/Lytics/sdk-kit). Plugins extend the runtime with additional capabilities.
+
+## Official Plugins
+
+### Rendering Plugins
+
+- **[Banner](/reference/plugins/banner)** - Renders banner experiences in the DOM with automatic positioning, theming, and responsive layout
+
+### Utility Plugins
+
+- **[Frequency](/reference/plugins/frequency)** - Manages impression tracking and frequency capping using persistent storage
+- **[Debug](/reference/plugins/debug)** - Provides console logging and window event emission for debugging
+
+### Display Condition Plugins
+
+Display condition plugins enable advanced triggering logic beyond simple URL and user targeting. These plugins detect user behavior and emit `trigger:*` events that update the evaluation context.
+
+- **[Exit Intent](/reference/plugins/exit-intent)** - Detects when users are about to leave the page based on mouse movement patterns
+- **[Scroll Depth](/reference/plugins/scroll-depth)** - Tracks scroll depth with configurable thresholds and advanced engagement metrics
+- **[Page Visits](/reference/plugins/page-visits)** - Tracks visit counts across sessions and lifetime with first-visit detection
+- **[Time Delay](/reference/plugins/time-delay)** - Triggers experiences after configurable delays with pause/resume support
+
+## Combining Display Conditions
+
+Display condition plugins can be combined using custom targeting logic:
+
+### AND Logic (All conditions must be met)
+
+```typescript
+experiences.register('super-engaged', {
+  type: 'banner',
+  content: {
+    message: 'You\'re amazing! Exclusive offer for engaged readers.'
+  },
+  targeting: {
+    custom: (context) => {
+      const scrolled = (context.triggers?.scrollDepth?.maxPercent || 0) >= 75;
+      const timeSpent = context.triggers?.timeDelay?.triggered === true;
+      const returning = (context.triggers?.pageVisits?.totalVisits || 0) >= 3;
+      
+      return scrolled && timeSpent && returning; // All three
+    }
+  }
+});
+```
+
+### OR Logic (Any condition can trigger)
+
+```typescript
+experiences.register('flexible-promo', {
+  type: 'banner',
+  content: {
+    message: 'Special offer just for you!'
+  },
+  targeting: {
+    custom: (context) => {
+      const exitIntent = context.triggers?.exitIntent?.triggered;
+      const scrolled75 = (context.triggers?.scrollDepth?.maxPercent || 0) >= 75;
+      const timeSpent = context.triggers?.timeDelay?.triggered;
+      
+      return exitIntent || scrolled75 || timeSpent; // Any one
+    }
+  }
+});
+```
+
+### NOT Logic (Inverse conditions)
+
+```typescript
+experiences.register('first-timer-only', {
+  type: 'banner',
+  content: {
+    message: 'Welcome! Here\'s 20% off your first order.'
+  },
+  targeting: {
+    custom: (context) => {
+      const isFirstVisit = context.triggers?.pageVisits?.isFirstVisit;
+      const hasNotExited = !context.triggers?.exitIntent?.triggered;
+      
+      return isFirstVisit && hasNotExited; // First visit, not exiting
+    }
+  }
+});
+```
+
+## Plugin Development
+
+The SDK uses [@lytics/sdk-kit](https://github.com/Lytics/sdk-kit)'s plugin system. Custom plugins can be created using the `PluginFunction` interface:
+
+```typescript
+import type { PluginFunction } from '@lytics/sdk-kit';
+
+const myPlugin: PluginFunction = (plugin, instance, config) => {
+  // Namespace
+  plugin.ns('my.plugin');
+  
+  // Default config
+  plugin.defaults({ myPlugin: { enabled: true } });
+  
+  // Expose API
+  plugin.expose({
+    myMethod() {
+      console.log('Hello from plugin!');
+    }
+  });
+  
+  // Listen to events
+  instance.on('experiences:evaluated', (decision) => {
+    // React to evaluations
+  });
+};
+
+// Use the plugin
+const experiences = createInstance();
+experiences.use(myPlugin);
+```
+
+See the [sdk-kit documentation](https://github.com/Lytics/sdk-kit) for complete plugin development guide.
+
+## Next Steps
+
+- [Banner Examples](/demo/banner) - Complete banner usage examples
+- [Events Reference](/reference/events) - All SDK events
+- [API Reference](/reference) - Core API documentation
+

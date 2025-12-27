@@ -1,0 +1,133 @@
+# Exit Intent Plugin
+
+Detects when users are about to leave the page based on mouse movement patterns.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  exitIntent: {
+    sensitivity: 50,        // Distance from top in pixels (default: 50)
+    minTimeOnPage: 5000,    // Minimum time before trigger (ms, default: 5000)
+    disableOnMobile: true   // Disable on mobile devices (default: true)
+  }
+});
+```
+
+#### How It Works
+
+The plugin tracks mouse movement and triggers when:
+1. Mouse moves toward the top of the page with upward velocity
+2. User has been on the page for at least `minTimeOnPage` milliseconds
+3. Trigger has not already fired this session
+
+**Detection Algorithm:**
+- Monitors `mousemove` events
+- Calculates velocity: `Math.abs(currentY - previousY)`
+- Triggers when: `y - velocity <= sensitivity`
+- Persists trigger state in `sessionStorage` (one trigger per session)
+
+#### Using in Targeting
+
+```typescript
+experiences.register('exit-offer', {
+  type: 'banner',
+  content: {
+    title: 'Wait! Don\'t miss out',
+    message: 'Get 20% off your first order',
+    buttons: [{ text: 'Claim Offer', url: '/shop?discount=FIRST20' }]
+  },
+  targeting: {
+    custom: (context) => {
+      return context.triggers?.exitIntent?.triggered === true;
+    }
+  }
+});
+```
+
+#### API Methods
+
+##### `exitIntent.isTriggered()`
+
+Check if exit intent has been triggered this session.
+
+```typescript
+if (experiences.exitIntent.isTriggered()) {
+  console.log('User tried to exit');
+}
+```
+
+##### `exitIntent.reset()`
+
+Reset the trigger state (allows re-triggering).
+
+```typescript
+experiences.exitIntent.reset();
+```
+
+##### `exitIntent.getPositions()`
+
+Get the last 5 mouse positions (for debugging).
+
+```typescript
+const positions = experiences.exitIntent.getPositions();
+console.log('Mouse trail:', positions);
+```
+
+#### Events
+
+**`trigger:exitIntent`**
+
+```typescript
+experiences.on('trigger:exitIntent', (event) => {
+  console.log('Exit intent triggered!');
+  console.log('Time on page:', event.timeOnPage, 'ms');
+  console.log('Mouse velocity:', event.velocity, 'px/event');
+  console.log('Position:', event.lastY, 'px from top');
+});
+```
+
+**Event payload:**
+```typescript
+{
+  triggered: boolean;
+  timestamp: number;
+  lastY: number;
+  previousY: number;
+  velocity: number;
+  timeOnPage: number;
+}
+```
+
+#### Migrating from Pathfora
+
+```diff
+- // Pathfora
+- var widget = new pathfora.Message({
+-   msg: 'Wait! Don\'t leave yet',
+-   layout: 'modal',
+-   displayConditions: {
+-     showOnExitIntent: true
+-   }
+- });
+
++ // Experience SDK
++ experiences.register('exit-modal', {
++   type: 'banner',
++   content: {
++     message: 'Wait! Don\'t leave yet',
++   },
++   targeting: {
++     custom: (ctx) => ctx.triggers?.exitIntent?.triggered
++   }
++ });
+```
+
+**Key Differences:**
+- ✅ **More accurate:** Velocity-based detection (industry standard)
+- ✅ **Configurable:** Adjust sensitivity and minimum time
+- ✅ **Better mobile:** Optional mobile detection
+- ✅ **Session-aware:** Only triggers once per session by default
+- ✅ **Composable:** Works with other display conditions
+
+---

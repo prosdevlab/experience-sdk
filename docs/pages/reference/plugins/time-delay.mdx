@@ -1,0 +1,190 @@
+# Time Delay Plugin
+
+Triggers experiences after configurable delays with pause/resume support.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  timeDelay: {
+    delay: 5000,             // Show delay in ms (default: 0)
+    hideAfter: 0,            // Auto-hide after ms (default: 0 = disabled)
+    pauseWhenHidden: true    // Pause timers when tab hidden (default: true)
+  }
+});
+```
+
+#### How It Works
+
+The plugin manages `setTimeout` timers with:
+1. **Show delay:** Emits `trigger:timeDelay` after `delay` milliseconds
+2. **Hide after:** Optionally emits hide trigger after additional time
+3. **Page Visibility API:** Pauses/resumes timers when tab hidden
+4. **Active elapsed tracking:** Tracks time excluding pauses
+
+**Timer Lifecycle:**
+```
+Init → [delay ms] → Show Trigger → [hideAfter ms] → Hide Trigger
+         ↓ (tab hidden)
+       Pause → Resume (tab visible) →
+```
+
+#### Using in Targeting
+
+```typescript
+// Show after 5 seconds
+experiences.register('delayed-welcome', {
+  type: 'banner',
+  content: {
+    title: 'Still reading?',
+    message: 'Subscribe to our newsletter for weekly updates.',
+    buttons: [{ text: 'Subscribe', url: '/subscribe' }]
+  },
+  targeting: {
+    custom: (context) => {
+      return context.triggers?.timeDelay?.triggered === true;
+    }
+  }
+});
+
+// Show after delay, hide after 10 seconds
+experiences.register('flash-message', {
+  type: 'banner',
+  content: {
+    message: 'Limited time: Free shipping on orders over $50!'
+  },
+  targeting: {
+    custom: (context) => {
+      const delay = context.triggers?.timeDelay;
+      // Show if triggered and not yet hidden
+      return delay?.triggered && delay?.type === 'show';
+    }
+  }
+});
+```
+
+#### API Methods
+
+##### `timeDelay.isTriggered()`
+
+Check if the show trigger has fired.
+
+```typescript
+if (experiences.timeDelay.isTriggered()) {
+  console.log('Delay elapsed');
+}
+```
+
+##### `timeDelay.getElapsed()`
+
+Get total elapsed time since initialization (includes pauses).
+
+```typescript
+const total = experiences.timeDelay.getElapsed();
+console.log(`${total}ms since page load`);
+```
+
+##### `timeDelay.getActiveElapsed()`
+
+Get active elapsed time (excludes pauses).
+
+```typescript
+const active = experiences.timeDelay.getActiveElapsed();
+console.log(`${active}ms of active time`);
+```
+
+##### `timeDelay.getRemaining()`
+
+Get remaining time until next trigger.
+
+```typescript
+const remaining = experiences.timeDelay.getRemaining();
+console.log(`${remaining}ms until trigger`);
+```
+
+##### `timeDelay.isPaused()`
+
+Check if timers are currently paused.
+
+```typescript
+if (experiences.timeDelay.isPaused()) {
+  console.log('Timers paused (tab hidden)');
+}
+```
+
+##### `timeDelay.reset()`
+
+Reset all timers and state.
+
+```typescript
+experiences.timeDelay.reset();
+```
+
+#### Events
+
+**`trigger:timeDelay`**
+
+```typescript
+experiences.on('trigger:timeDelay', (event) => {
+  console.log('Time delay triggered!');
+  console.log('Type:', event.type); // 'show' or 'hide'
+  console.log('Elapsed:', event.elapsed, 'ms');
+  console.log('Active elapsed:', event.activeElapsed, 'ms');
+  console.log('Was paused:', event.wasPaused);
+});
+```
+
+**Event payload:**
+```typescript
+{
+  triggered: boolean;
+  timestamp: number;
+  elapsed: number;
+  activeElapsed: number;
+  remaining: number;
+  wasPaused: boolean;
+  type: 'show' | 'hide';
+}
+```
+
+#### Migrating from Pathfora
+
+```diff
+- // Pathfora
+- var widget = new pathfora.Message({
+-   msg: 'Still here?',
+-   displayConditions: {
+-     showDelay: 5
+-   }
+- });
+
++ // Experience SDK
++ experiences.register('delayed-message', {
++   type: 'banner',
++   content: {
++     message: 'Still here?'
++   },
++   targeting: {
++     custom: (ctx) => ctx.triggers?.timeDelay?.triggered
++   }
++ });
++ 
++ // Configure globally
++ experiences.config({
++   timeDelay: { delay: 5000 }
++ });
+```
+
+**Key Differences:**
+- ✅ **Millisecond precision:** Pathfora used seconds
+- ✅ **Page Visibility API:** Pauses when tab hidden
+- ✅ **Active vs total time:** Track both separately
+- ✅ **Hide after support:** Auto-hide experiences
+- ✅ **Remaining time API:** Know how long until trigger
+- ✅ **Reset capability:** Re-trigger after reset
+
+---
+
+## Combining Display Conditions
+
+Display condition plugins can be combined using custom targeting logic:
