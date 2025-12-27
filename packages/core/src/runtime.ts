@@ -1,6 +1,11 @@
 import { SDK } from '@lytics/sdk-kit';
 import { storagePlugin } from '@lytics/sdk-kit-plugins';
-import { bannerPlugin, debugPlugin, frequencyPlugin } from '@prosdevlab/experience-sdk-plugins';
+import {
+  bannerPlugin,
+  debugPlugin,
+  exitIntentPlugin,
+  frequencyPlugin,
+} from '@prosdevlab/experience-sdk-plugins';
 import type {
   Context,
   Decision,
@@ -28,6 +33,7 @@ export class ExperienceRuntime {
   private decisions: Decision[] = [];
   private initialized = false;
   private destroyed = false;
+  private triggerContext: Context = { triggers: {} };
 
   constructor(config: ExperienceConfig = {}) {
     // Create SDK instance
@@ -40,7 +46,34 @@ export class ExperienceRuntime {
     this.sdk.use(storagePlugin);
     this.sdk.use(debugPlugin);
     this.sdk.use(frequencyPlugin);
+    this.sdk.use(exitIntentPlugin); // NEW: Exit intent plugin
     this.sdk.use(bannerPlugin);
+
+    // Listen for trigger events from display condition plugins
+    this.setupTriggerListeners();
+  }
+
+  /**
+   * Setup listeners for trigger:* events
+   * This enables event-driven display conditions
+   */
+  private setupTriggerListeners(): void {
+    // Listen for all trigger:* events using wildcard
+    // When a trigger fires, update context and re-evaluate
+    this.sdk.on('trigger:*', (eventName: string, data: any) => {
+      const triggerName = eventName.replace('trigger:', '');
+
+      // Update trigger context
+      this.triggerContext.triggers = this.triggerContext.triggers || {};
+      this.triggerContext.triggers[triggerName] = {
+        triggered: true,
+        timestamp: Date.now(),
+        ...data, // Merge trigger-specific data
+      };
+
+      // Re-evaluate all experiences with updated context
+      this.evaluate(this.triggerContext);
+    });
   }
 
   /**
@@ -63,6 +96,7 @@ export class ExperienceRuntime {
       this.sdk.use(storagePlugin);
       this.sdk.use(debugPlugin);
       this.sdk.use(frequencyPlugin);
+      this.sdk.use(exitIntentPlugin); // NEW: Exit intent plugin
       this.sdk.use(bannerPlugin);
 
       this.destroyed = false;
@@ -359,6 +393,7 @@ export function buildContext(partial?: Partial<Context>): Context {
     timestamp: Date.now(),
     user: partial?.user,
     custom: partial?.custom,
+    triggers: partial?.triggers ?? {}, // Include triggers
   };
 }
 
