@@ -8,7 +8,9 @@ export * from './banner';
 
 // Export plugins
 export * from './debug';
+export * from './exit-intent';
 export * from './frequency';
+
 // Export shared types
 export type {
   BannerContent,

@@ -124,6 +124,54 @@ export interface Context {
   timestamp?: number;
   /** Custom context properties */
   custom?: Record<string, any>;
+  /** Trigger state (for display condition plugins) */
+  triggers?: TriggerState;
+}
+
+/**
+ * Trigger State
+ *
+ * Tracks which trigger-based display conditions have fired.
+ * Used by plugins like exitIntent, scrollDepth, pageVisits, timeDelay.
+ */
+export interface TriggerState {
+  /** Exit intent trigger state */
+  exitIntent?: {
+    /** Whether the trigger has fired */
+    triggered: boolean;
+    /** When the trigger fired (unix timestamp) */
+    timestamp?: number;
+    /** Additional trigger-specific data */
+    lastY?: number;
+    previousY?: number;
+    velocity?: number;
+    timeOnPage?: number;
+  };
+  /** Scroll depth trigger state */
+  scrollDepth?: {
+    triggered: boolean;
+    timestamp?: number;
+    /** Current scroll percentage (0-100) */
+    percent?: number;
+  };
+  /** Page visits trigger state */
+  pageVisits?: {
+    triggered: boolean;
+    timestamp?: number;
+    /** Total visit count */
+    count?: number;
+    /** Whether this is the first visit */
+    firstVisit?: boolean;
+  };
+  /** Time delay trigger state */
+  timeDelay?: {
+    triggered: boolean;
+    timestamp?: number;
+    /** Time elapsed (ms) */
+    elapsed?: number;
+  };
+  /** Extensible for future triggers */
+  [key: string]: any;
 }
 
 /**

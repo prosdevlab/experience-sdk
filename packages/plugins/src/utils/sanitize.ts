@@ -92,7 +92,7 @@ export function sanitizeHTML(html: string): string {
         }
       }
 
-      const attrString = attrs.length > 0 ? ' ' + attrs.join(' ') : '';
+      const attrString = attrs.length > 0 ? ` ${attrs.join(' ')}` : '';
 
       // Process child nodes
       let innerHTML = '';
