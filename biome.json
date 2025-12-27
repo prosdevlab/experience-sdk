@@ -32,6 +32,10 @@
         "packages/core/src/types.ts",
         "packages/core/src/runtime.ts",
         "packages/plugins/src/types.ts",
+        "packages/plugins/src/exit-intent/exit-intent.ts",
+        "packages/plugins/src/scroll-depth/scroll-depth.ts",
+        "packages/plugins/src/page-visits/page-visits.ts",
+        "packages/plugins/src/utils/sanitize.ts",
         "specs/**/contracts/types.ts",
         "docs/**/*.tsx"
       ],

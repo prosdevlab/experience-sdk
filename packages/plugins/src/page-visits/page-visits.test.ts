@@ -166,7 +166,7 @@ describe('Page Visits Plugin', () => {
       await initPlugin();
       const lastVisitTime2 = sdk.pageVisits.getLastVisitTime();
 
-      expect(lastVisitTime2).toBeGreaterThan(lastVisitTime1!);
+      expect(lastVisitTime2).toBeGreaterThan(lastVisitTime1 ?? 0);
     });
   });
 
