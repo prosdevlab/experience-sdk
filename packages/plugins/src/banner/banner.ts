@@ -69,16 +69,12 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         left: 0;
         right: 0;
         width: 100%;
-        padding: 16px 20px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         line-height: 1.5;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         box-sizing: border-box;
         z-index: 10000;
-        background: #f9fafb;
+        background: #ffffff;
         color: #111827;
         border-bottom: 1px solid #e5e7eb;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
@@ -98,33 +94,38 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       .xp-banner__container {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        width: 100%;
+        gap: 16px;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 14px 24px;
       }
       
       .xp-banner__content {
         flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
       
       .xp-banner__title {
         font-weight: 600;
-        margin-bottom: 4px;
-        margin-top: 0;
-        font-size: 14px;
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.4;
       }
       
       .xp-banner__message {
         margin: 0;
         font-size: 14px;
+        line-height: 1.5;
+        color: #6b7280;
       }
       
       .xp-banner__buttons {
         display: flex;
         align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
+        gap: 8px;
         flex-shrink: 0;
       }
       
@@ -137,6 +138,10 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         cursor: pointer;
         transition: all 0.2s;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
       }
       
       .xp-banner__button--primary {
@@ -149,71 +154,93 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       }
       
       .xp-banner__button--secondary {
-        background: #ffffff;
+        background: #f3f4f6;
         color: #374151;
-        border: 1px solid #d1d5db;
+        border: 1px solid #e5e7eb;
       }
       
       .xp-banner__button--secondary:hover {
-        background: #f9fafb;
+        background: #e5e7eb;
       }
       
       .xp-banner__button--link {
         background: transparent;
         color: #2563eb;
-        padding: 4px 8px;
+        padding: 6px 12px;
         font-weight: 400;
-        text-decoration: underline;
       }
       
       .xp-banner__button--link:hover {
-        background: rgba(0, 0, 0, 0.05);
+        background: #f3f4f6;
+        text-decoration: underline;
       }
       
       .xp-banner__close {
         background: transparent;
         border: none;
-        color: #6b7280;
-        font-size: 24px;
+        color: #9ca3af;
+        font-size: 20px;
         line-height: 1;
         cursor: pointer;
-        padding: 0;
+        padding: 4px;
         margin: 0;
-        opacity: 0.7;
-        transition: opacity 0.2s;
+        transition: color 0.2s;
         flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
       }
       
       .xp-banner__close:hover {
-        opacity: 1;
+        color: #111827;
+        background: #f3f4f6;
       }
       
       @media (max-width: 640px) {
         .xp-banner__container {
-          flex-direction: column;
-          align-items: stretch;
+          flex-wrap: wrap;
+          padding: 14px 16px;
+          position: relative;
+        }
+        
+        .xp-banner__content {
+          flex: 1 1 100%;
+          padding-right: 32px;
         }
         
         .xp-banner__buttons {
+          flex: 1 1 auto;
           width: 100%;
-          flex-direction: column;
         }
         
         .xp-banner__button {
-          width: 100%;
+          flex: 1;
+        }
+        
+        .xp-banner__close {
+          position: absolute;
+          top: 12px;
+          right: 12px;
         }
       }
       
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         .xp-banner {
-          background: #1f2937;
-          color: #f3f4f6;
-          border-bottom-color: #374151;
+          background: #111827;
+          color: #f9fafb;
+          border-bottom-color: #1f2937;
         }
         
         .xp-banner--bottom {
-          border-top-color: #374151;
+          border-top-color: #1f2937;
+        }
+        
+        .xp-banner__message {
+          color: #9ca3af;
         }
         
         .xp-banner__button--primary {
@@ -225,21 +252,30 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         }
         
         .xp-banner__button--secondary {
-          background: #374151;
-          color: #f3f4f6;
-          border-color: #4b5563;
+          background: #1f2937;
+          color: #f9fafb;
+          border-color: #374151;
         }
         
         .xp-banner__button--secondary:hover {
-          background: #4b5563;
+          background: #374151;
         }
         
         .xp-banner__button--link {
-          color: #93c5fd;
+          color: #60a5fa;
+        }
+        
+        .xp-banner__button--link:hover {
+          background: #1f2937;
         }
         
         .xp-banner__close {
-          color: #9ca3af;
+          color: #6b7280;
+        }
+        
+        .xp-banner__close:hover {
+          color: #f9fafb;
+          background: #1f2937;
         }
       }
     `;
@@ -306,17 +342,6 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
     contentDiv.appendChild(message);
 
     container.appendChild(contentDiv);
-
-    banner.appendChild(contentDiv);
-
-    // Create button container for actions and/or dismiss
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    `;
 
     // Create buttons container
     const buttonsDiv = document.createElement('div');
