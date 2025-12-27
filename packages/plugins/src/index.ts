@@ -10,6 +10,7 @@ export * from './banner';
 export * from './debug';
 export * from './exit-intent';
 export * from './frequency';
+export * from './scroll-depth';
 
 // Export shared types
 export type {
