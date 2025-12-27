@@ -7,6 +7,7 @@ import {
   frequencyPlugin,
   pageVisitsPlugin,
   scrollDepthPlugin,
+  timeDelayPlugin,
 } from '@prosdevlab/experience-sdk-plugins';
 import type {
   Context,
@@ -51,6 +52,7 @@ export class ExperienceRuntime {
     this.sdk.use(exitIntentPlugin);
     this.sdk.use(scrollDepthPlugin);
     this.sdk.use(pageVisitsPlugin);
+    this.sdk.use(timeDelayPlugin);
     this.sdk.use(bannerPlugin);
 
     // Listen for trigger events from display condition plugins
@@ -100,7 +102,10 @@ export class ExperienceRuntime {
       this.sdk.use(storagePlugin);
       this.sdk.use(debugPlugin);
       this.sdk.use(frequencyPlugin);
-      this.sdk.use(exitIntentPlugin); // NEW: Exit intent plugin
+      this.sdk.use(exitIntentPlugin);
+      this.sdk.use(scrollDepthPlugin);
+      this.sdk.use(pageVisitsPlugin);
+      this.sdk.use(timeDelayPlugin);
       this.sdk.use(bannerPlugin);
 
       this.destroyed = false;
