@@ -167,8 +167,14 @@ export interface TriggerState {
   timeDelay?: {
     triggered: boolean;
     timestamp?: number;
-    /** Time elapsed (ms) */
+    /** Total elapsed time (ms, includes paused time) */
     elapsed?: number;
+    /** Active elapsed time (ms, excludes paused time) */
+    activeElapsed?: number;
+    /** Whether timer was paused */
+    wasPaused?: boolean;
+    /** Number of visibility changes */
+    visibilityChanges?: number;
   };
   /** Extensible for future triggers */
   [key: string]: any;

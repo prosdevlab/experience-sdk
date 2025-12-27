@@ -12,6 +12,7 @@ export * from './exit-intent';
 export * from './frequency';
 export * from './page-visits';
 export * from './scroll-depth';
+export * from './time-delay';
 
 // Export shared types
 export type {
