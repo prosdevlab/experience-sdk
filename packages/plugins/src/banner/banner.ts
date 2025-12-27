@@ -14,6 +14,7 @@ export interface BannerPluginConfig {
     position?: 'top' | 'bottom';
     dismissable?: boolean;
     zIndex?: number;
+    pushDown?: string; // CSS selector of element to push down (add margin-top)
   };
 }
 
@@ -33,7 +34,23 @@ export interface BannerPlugin {
  * import { createInstance } from '@prosdevlab/experience-sdk';
  * import { bannerPlugin } from '@prosdevlab/experience-sdk-plugins';
  *
- * const sdk = createInstance({ banner: { position: 'top', dismissable: true } });
+ * // Basic usage (banner overlays at top)
+ * const sdk = createInstance({
+ *   banner: {
+ *     position: 'top',
+ *     dismissable: true
+ *   }
+ * });
+ * sdk.use(bannerPlugin);
+ *
+ * // With pushDown (pushes navigation down instead of overlaying)
+ * const sdk = createInstance({
+ *   banner: {
+ *     position: 'top',
+ *     dismissable: true,
+ *     pushDown: 'header' // CSS selector of element to push down
+ *   }
+ * });
  * sdk.use(bannerPlugin);
  * ```
  */
@@ -427,6 +444,49 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
   }
 
   /**
+   * Apply pushDown margin to target element
+   */
+  function applyPushDown(banner: HTMLElement, position: 'top' | 'bottom'): void {
+    const pushDownSelector = config.get('banner.pushDown');
+
+    if (!pushDownSelector || position !== 'top') {
+      return; // Only push down for top banners
+    }
+
+    const targetElement = document.querySelector(pushDownSelector);
+    if (!targetElement || !(targetElement instanceof HTMLElement)) {
+      return;
+    }
+
+    // Get banner height
+    const height = banner.offsetHeight;
+
+    // Apply margin-top with transition
+    targetElement.style.transition = 'margin-top 0.3s ease';
+    targetElement.style.marginTop = `${height}px`;
+  }
+
+  /**
+   * Remove pushDown margin from target element
+   */
+  function removePushDown(): void {
+    const pushDownSelector = config.get('banner.pushDown');
+
+    if (!pushDownSelector) {
+      return;
+    }
+
+    const targetElement = document.querySelector(pushDownSelector);
+    if (!targetElement || !(targetElement instanceof HTMLElement)) {
+      return;
+    }
+
+    // Remove margin-top with transition
+    targetElement.style.transition = 'margin-top 0.3s ease';
+    targetElement.style.marginTop = '0';
+  }
+
+  /**
    * Show a banner experience
    */
   function show(experience: Experience): void {
@@ -443,6 +503,11 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
     const banner = createBannerElement(experience);
     document.body.appendChild(banner);
     activeBanners.set(experience.id, banner);
+
+    // Apply pushDown to target element if configured
+    const content = experience.content as BannerContent;
+    const position = content.position ?? config.get('banner.position') ?? 'top';
+    applyPushDown(banner, position);
 
     instance.emit('experiences:shown', {
       experienceId: experience.id,
@@ -462,6 +527,11 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         banner.parentNode.removeChild(banner);
       }
       activeBanners.delete(experienceId);
+
+      // Remove pushDown if no more banners
+      if (activeBanners.size === 0) {
+        removePushDown();
+      }
     } else {
       // Remove all banners
       for (const [id, banner] of activeBanners.entries()) {
@@ -470,6 +540,9 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         }
         activeBanners.delete(id);
       }
+
+      // Remove pushDown
+      removePushDown();
     }
   }
 
