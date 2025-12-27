@@ -1,4 +1,4 @@
-# Phase 2: Display Condition Plugins
+# Phase 1: Display Condition Plugins
 
 **Status:** In Progress  
 **Started:** December 2024  
