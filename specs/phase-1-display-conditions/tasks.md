@@ -1,16 +1,16 @@
-# Phase 2: Display Condition Plugins - Tasks
+# Phase 1: Display Condition Plugins - Tasks
 
 This file breaks down Phase 2 into GitHub-ready issues.
 
 ## Labels
-- `phase-2` - Phase 2: Display Conditions
+- `phase-1` - Phase 1: Display Conditions
 - `plugin` - Plugin implementation
 - `testing` - Test-related work
 - `documentation` - Documentation updates
 - `enhancement` - New feature
 
 ## Milestone
-**Phase 2: Display Condition Plugins**
+**Phase 1: Display Condition Plugins**
 
 ---
 
@@ -37,7 +37,7 @@ Add core infrastructure to support trigger-based display conditions:
 ## Task 2: Exit Intent Plugin
 **Status:** ✅ Complete  
 **PR:** #TBD (Already merged to `feat/display-condition-plugins`)  
-**Labels:** `phase-2`, `plugin`, `enhancement`
+**Labels:** `phase-1`, `plugin`, `enhancement`
 
 ### Description
 Implement exit intent detection plugin matching Pathfora's `showOnExitIntent`.
@@ -57,7 +57,7 @@ Implement exit intent detection plugin matching Pathfora's `showOnExitIntent`.
 
 ## Task 3: Research Scroll Depth Plugin
 **Status:** TODO  
-**Labels:** `phase-2`, `research`
+**Labels:** `phase-1`, `research`
 
 ### Description
 Research Pathfora's `scrollPercentageToDisplay` implementation and design our API.
@@ -81,7 +81,7 @@ Research Pathfora's `scrollPercentageToDisplay` implementation and design our AP
 ## Task 4: Implement Scroll Depth Plugin
 **Status:** TODO  
 **Depends on:** Task 3  
-**Labels:** `phase-2`, `plugin`, `enhancement`
+**Labels:** `phase-1`, `plugin`, `enhancement`
 
 ### Description
 Implement scroll depth tracking plugin.
@@ -112,7 +112,7 @@ Implement scroll depth tracking plugin.
 ## Task 5: Test Scroll Depth Plugin
 **Status:** TODO  
 **Depends on:** Task 4  
-**Labels:** `phase-2`, `plugin`, `testing`
+**Labels:** `phase-1`, `plugin`, `testing`
 
 ### Description
 Write comprehensive tests for scroll depth plugin.
@@ -138,7 +138,7 @@ Write comprehensive tests for scroll depth plugin.
 
 ## Task 6: Research Page Visits Plugin
 **Status:** TODO  
-**Labels:** `phase-2`, `research`
+**Labels:** `phase-1`, `research`
 
 ### Description
 Research Pathfora's `pageVisits` implementation and design our API.
@@ -162,7 +162,7 @@ Research Pathfora's `pageVisits` implementation and design our API.
 ## Task 7: Implement Page Visits Plugin
 **Status:** TODO  
 **Depends on:** Task 6  
-**Labels:** `phase-2`, `plugin`, `enhancement`
+**Labels:** `phase-1`, `plugin`, `enhancement`
 
 ### Description
 Implement page visit tracking plugin.
@@ -192,7 +192,7 @@ Implement page visit tracking plugin.
 ## Task 8: Test Page Visits Plugin
 **Status:** TODO  
 **Depends on:** Task 7  
-**Labels:** `phase-2`, `plugin`, `testing`
+**Labels:** `phase-1`, `plugin`, `testing`
 
 ### Description
 Write comprehensive tests for page visits plugin.
@@ -218,7 +218,7 @@ Write comprehensive tests for page visits plugin.
 
 ## Task 9: Research Time Delay Plugin
 **Status:** TODO  
-**Labels:** `phase-2`, `research`
+**Labels:** `phase-1`, `research`
 
 ### Description
 Research Pathfora's `showDelay` and `hideAfter` implementation and design our API.
@@ -242,7 +242,7 @@ Research Pathfora's `showDelay` and `hideAfter` implementation and design our AP
 ## Task 10: Implement Time Delay Plugin
 **Status:** TODO  
 **Depends on:** Task 9  
-**Labels:** `phase-2`, `plugin`, `enhancement`
+**Labels:** `phase-1`, `plugin`, `enhancement`
 
 ### Description
 Implement time-based delay plugin.
@@ -272,7 +272,7 @@ Implement time-based delay plugin.
 ## Task 11: Test Time Delay Plugin
 **Status:** TODO  
 **Depends on:** Task 10  
-**Labels:** `phase-2`, `plugin`, `testing`
+**Labels:** `phase-1`, `plugin`, `testing`
 
 ### Description
 Write comprehensive tests for time delay plugin.
@@ -299,7 +299,7 @@ Write comprehensive tests for time delay plugin.
 ## Task 12: Integration Testing
 **Status:** TODO  
 **Depends on:** Tasks 2, 5, 8, 11  
-**Labels:** `phase-2`, `testing`
+**Labels:** `phase-1`, `testing`
 
 ### Description
 Test all plugins working together in combination.
@@ -326,7 +326,7 @@ Test all plugins working together in combination.
 ## Task 13: Documentation
 **Status:** TODO  
 **Depends on:** Task 12  
-**Labels:** `phase-2`, `documentation`
+**Labels:** `phase-1`, `documentation`
 
 ### Description
 Document all display condition plugins.
@@ -355,7 +355,7 @@ Document all display condition plugins.
 ## Task 14: Playground Examples
 **Status:** TODO  
 **Depends on:** Task 12  
-**Labels:** `phase-2`, `playground`, `documentation`
+**Labels:** `phase-1`, `playground`, `documentation`
 
 ### Description
 Add working examples to the playground.
