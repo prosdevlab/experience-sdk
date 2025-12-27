@@ -1,0 +1,88 @@
+# Debug Plugin
+
+Provides console logging and window event emission for debugging and Chrome extension integration.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  debug: {
+    enabled: true,           // Enable debug output (default: false)
+    windowEvents: true,      // Emit to window (default: true when enabled)
+    prefix: 'experiences'    // Log prefix (default: 'experiences')
+  }
+});
+```
+
+Or use the shorthand:
+
+```typescript
+const experiences = createInstance({ debug: true });
+```
+
+#### API Methods
+
+##### `debug.log(message, data?)`
+
+Log a message with optional data.
+
+```typescript
+experiences.debug.log('User clicked button', { action: 'cta' });
+```
+
+**Console output:**
+```
+[experiences] User clicked button { action: 'cta' }
+```
+
+**Window event:**
+```javascript
+window.addEventListener('experiences:debug', (event) => {
+  console.log(event.detail);
+  // { message: 'User clicked button', data: { action: 'cta' }, timestamp: ... }
+});
+```
+
+#### Automatic Logging
+
+When debug mode is enabled, the plugin automatically logs:
+
+- SDK initialization
+- Experience registration
+- Evaluation results
+- Decision reasons
+- Event emissions
+
+```typescript
+const experiences = createInstance({ debug: true });
+
+experiences.register('welcome', { ... });
+// [experiences] Experience registered: welcome
+
+const decision = experiences.evaluate();
+// [experiences] Evaluating 1 experience(s)
+// [experiences] Decision: show=true, experience=welcome
+// [experiences] Reasons: ["✅ URL matches", "✅ Frequency: 0/3 this session"]
+```
+
+#### Chrome Extension Integration
+
+The debug plugin emits events to `window` that can be captured by Chrome extensions:
+
+```javascript
+// In Chrome extension content script
+window.addEventListener('experiences:debug', (event) => {
+  chrome.runtime.sendMessage({
+    type: 'EXPERIENCE_DEBUG',
+    payload: event.detail
+  });
+});
+```
+
+This enables building DevTools panels for inspecting experience decisions in real-time.
+
+---
+
+## Display Condition Plugins
+
+Display condition plugins enable advanced triggering logic beyond simple URL and user targeting. These plugins detect user behavior and emit `trigger:*` events that update the evaluation context.

@@ -1,0 +1,85 @@
+# Frequency Plugin
+
+Manages impression tracking and frequency capping using persistent storage.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  frequency: {
+    enabled: true,           // Enable frequency tracking (default: true)
+    storage: 'local'         // 'local' | 'session' | 'memory' (default: 'local')
+  }
+});
+```
+
+#### Experience-Level Frequency
+
+Define frequency caps per experience:
+
+```typescript
+experiences.register('welcome', {
+  type: 'banner',
+  content: { message: 'Welcome!' },
+  frequency: {
+    max: 3,                 // Maximum impressions
+    per: 'session'          // 'session' | 'day' | 'week'
+  }
+});
+```
+
+#### API Methods
+
+##### `frequency.getImpressionCount(experienceId, period?)`
+
+Get impression count for an experience.
+
+```typescript
+const count = experiences.frequency.getImpressionCount('welcome', 'session');
+console.log(`Shown ${count} times this session`);
+```
+
+**Parameters:**
+- `experienceId: string` - Experience to check
+- `period?: 'session' | 'day' | 'week'` - Time period (optional)
+
+**Returns:** `number`
+
+##### `frequency.recordImpression(experienceId)`
+
+Manually record an impression.
+
+```typescript
+experiences.frequency.recordImpression('welcome');
+```
+
+##### `frequency.reset(experienceId?)`
+
+Reset impression counts.
+
+```typescript
+// Reset specific experience
+experiences.frequency.reset('welcome');
+
+// Reset all experiences
+experiences.frequency.reset();
+```
+
+#### How It Works
+
+1. **Impressions** are recorded when `experiences:shown` event is emitted
+2. **Storage** persists counts in localStorage (or sessionStorage/memory)
+3. **Evaluation** checks counts before showing experiences
+4. **Dismissals** do NOT count as impressions
+
+#### Storage Keys
+
+Frequency data is stored with namespaced keys:
+
+```
+experiences.frequency.session:welcome = 3
+experiences.frequency.day:2024-12-25:welcome = 1
+experiences.frequency.week:2024-W52:welcome = 5
+```
+
+---

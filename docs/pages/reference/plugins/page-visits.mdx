@@ -1,0 +1,231 @@
+# Page Visits Plugin
+
+Tracks visit counts across sessions and lifetime with first-visit detection.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  pageVisits: {
+    enabled: true,           // Enable tracking (default: true)
+    autoIncrement: true,     // Auto-increment on init (default: true)
+    storage: 'local',        // 'local' | 'session' (default: 'local')
+    respectDNT: true         // Honor Do Not Track (default: true)
+  }
+});
+```
+
+#### How It Works
+
+The plugin tracks visit counts in two scopes:
+1. **Session visits:** Resets when browser tab closes (`sessionStorage`)
+2. **Total visits:** Persists across sessions (`localStorage`)
+
+**Storage Schema:**
+```javascript
+{
+  count: 5,
+  first: 1703505600000,  // Unix timestamp of first visit
+  last: 1703678400000    // Unix timestamp of last visit
+}
+```
+
+#### Using in Targeting
+
+```typescript
+// First-time visitors
+experiences.register('welcome-new', {
+  type: 'banner',
+  content: {
+    title: 'Welcome!',
+    message: 'First time here? Get 20% off your first order.',
+    buttons: [{ text: 'Shop Now', url: '/shop' }]
+  },
+  targeting: {
+    custom: (context) => {
+      return context.triggers?.pageVisits?.isFirstVisit === true;
+    }
+  }
+});
+
+// Returning visitors
+experiences.register('welcome-back', {
+  type: 'banner',
+  content: {
+    title: 'Welcome back!',
+    message: 'We missed you! Check out what\'s new.',
+    buttons: [{ text: 'See New Arrivals', url: '/new' }]
+  },
+  targeting: {
+    custom: (context) => {
+      const visits = context.triggers?.pageVisits;
+      return visits?.totalVisits >= 3 && !visits?.isFirstVisit;
+    }
+  }
+});
+
+// Frequent visitors
+experiences.register('vip-offer', {
+  type: 'banner',
+  content: {
+    title: 'You\'re a VIP!',
+    message: 'Thanks for being a loyal customer. Exclusive offer inside.',
+    buttons: [{ text: 'Claim Reward', url: '/rewards' }]
+  },
+  targeting: {
+    custom: (context) => {
+      return (context.triggers?.pageVisits?.totalVisits || 0) >= 10;
+    }
+  }
+});
+```
+
+#### API Methods
+
+##### `pageVisits.isFirstVisit()`
+
+Check if this is the first visit (before any increment).
+
+```typescript
+if (experiences.pageVisits.isFirstVisit()) {
+  console.log('First-time visitor!');
+}
+```
+
+##### `pageVisits.getTotalCount()`
+
+Get total visit count (lifetime).
+
+```typescript
+const total = experiences.pageVisits.getTotalCount();
+console.log(`${total} visits total`);
+```
+
+##### `pageVisits.getSessionCount()`
+
+Get session visit count.
+
+```typescript
+const session = experiences.pageVisits.getSessionCount();
+console.log(`${session} visits this session`);
+```
+
+##### `pageVisits.increment()`
+
+Manually increment visit counts.
+
+```typescript
+experiences.pageVisits.increment();
+```
+
+##### `pageVisits.reset()`
+
+Reset all visit counts.
+
+```typescript
+// Reset everything
+experiences.pageVisits.reset();
+
+// Or reset specific scope
+experiences.pageVisits.reset('session');
+experiences.pageVisits.reset('total');
+```
+
+##### `pageVisits.getFirstVisitTime()`
+
+Get timestamp of first visit.
+
+```typescript
+const firstVisit = experiences.pageVisits.getFirstVisitTime();
+if (firstVisit) {
+  const daysAgo = (Date.now() - firstVisit) / (1000 * 60 * 60 * 24);
+  console.log(`First visited ${daysAgo} days ago`);
+}
+```
+
+##### `pageVisits.getLastVisitTime()`
+
+Get timestamp of last visit.
+
+```typescript
+const lastVisit = experiences.pageVisits.getLastVisitTime();
+if (lastVisit) {
+  const hoursAgo = (Date.now() - lastVisit) / (1000 * 60 * 60);
+  console.log(`Last visited ${hoursAgo} hours ago`);
+}
+```
+
+##### `pageVisits.disable()` / `pageVisits.enable()`
+
+Temporarily disable/enable tracking.
+
+```typescript
+// Disable tracking (e.g., for privacy compliance)
+experiences.pageVisits.disable();
+
+// Re-enable later
+experiences.pageVisits.enable();
+```
+
+#### Events
+
+**`pageVisits:incremented`**
+
+```typescript
+experiences.on('pageVisits:incremented', (event) => {
+  console.log('Visit tracked!');
+  console.log('Total visits:', event.totalVisits);
+  console.log('Session visits:', event.sessionVisits);
+  console.log('Is first visit:', event.isFirstVisit);
+});
+```
+
+**`pageVisits:reset`**
+
+```typescript
+experiences.on('pageVisits:reset', ({ scope }) => {
+  console.log(`${scope} visits reset`);
+});
+```
+
+**`pageVisits:disabled`**
+
+```typescript
+experiences.on('pageVisits:disabled', () => {
+  console.log('Page visit tracking disabled');
+});
+```
+
+#### Migrating from Pathfora
+
+```diff
+- // Pathfora
+- var widget = new pathfora.Message({
+-   msg: 'Welcome back!',
+-   displayConditions: {
+-     pageVisits: 3
+-   }
+- });
+
++ // Experience SDK
++ experiences.register('returning-visitor', {
++   type: 'banner',
++   content: {
++     message: 'Welcome back!'
++   },
++   targeting: {
++     custom: (ctx) => (ctx.triggers?.pageVisits?.totalVisits || 0) >= 3
++   }
++ });
+```
+
+**Key Differences:**
+- ✅ **Session vs lifetime:** Track both scopes independently
+- ✅ **First-visit detection:** Built-in `isFirstVisit()` method
+- ✅ **Timestamps:** Know when first/last visits occurred
+- ✅ **Full operators:** `>=`, `<`, `===`, not just `>=`
+- ✅ **Privacy-aware:** Honors DNT, enable/disable API
+- ✅ **Reset capability:** Clear counts programmatically
+- ✅ **Cross-tab safe:** Uses sdk-kit storage with locking
+
+---

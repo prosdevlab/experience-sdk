@@ -1,0 +1,190 @@
+# Scroll Depth Plugin
+
+Tracks scroll depth with configurable thresholds and advanced engagement metrics.
+
+#### Configuration
+
+```typescript
+const experiences = createInstance({
+  scrollDepth: {
+    thresholds: [25, 50, 75, 90],  // Percentage thresholds (default: [25, 50, 75])
+    throttle: 100,                  // Throttle interval in ms (default: 100)
+    includeViewport: true,          // Include viewport in calc (default: true)
+    trackMax: true                  // Track max scroll reached (default: true)
+  }
+});
+```
+
+#### How It Works
+
+The plugin monitors scroll position and triggers when thresholds are crossed:
+1. Calculates scroll percentage: `(scrollTop / (scrollHeight - clientHeight)) * 100`
+2. Emits `trigger:scrollDepth` when crossing thresholds
+3. Tracks direction changes, velocity, and engagement score
+
+**Advanced Metrics:**
+- **Velocity:** Scroll speed in pixels per throttle interval
+- **Direction:** Up/down tracking with change counting
+- **Time to threshold:** How long it took to reach each threshold
+- **Engagement score:** Weighted metric based on depth, time, and interaction
+
+#### Using in Targeting
+
+```typescript
+// Simple threshold
+experiences.register('engaged-reader', {
+  type: 'banner',
+  content: {
+    message: 'Enjoying this article? Subscribe for more!',
+    buttons: [{ text: 'Subscribe', url: '/subscribe' }]
+  },
+  targeting: {
+    custom: (context) => {
+      return (context.triggers?.scrollDepth?.maxPercent || 0) >= 75;
+    }
+  }
+});
+
+// Advanced engagement
+experiences.register('highly-engaged', {
+  type: 'banner',
+  content: {
+    message: 'You're a power reader! Join our community.',
+    buttons: [{ text: 'Join Now', url: '/community' }]
+  },
+  targeting: {
+    custom: (context) => {
+      const scroll = context.triggers?.scrollDepth;
+      return (
+        scroll?.maxPercent >= 90 &&
+        scroll?.engagementScore >= 50 &&
+        scroll?.directionChanges >= 2
+      );
+    }
+  }
+});
+```
+
+#### API Methods
+
+##### `scrollDepth.getCurrentPercent()`
+
+Get current scroll percentage.
+
+```typescript
+const percent = experiences.scrollDepth.getCurrentPercent();
+console.log(`Scrolled ${percent}%`);
+```
+
+##### `scrollDepth.getMaxPercent()`
+
+Get maximum scroll percentage reached.
+
+```typescript
+const max = experiences.scrollDepth.getMaxPercent();
+console.log(`Deepest scroll: ${max}%`);
+```
+
+##### `scrollDepth.getThresholdsCrossed()`
+
+Get all thresholds that have been crossed.
+
+```typescript
+const crossed = experiences.scrollDepth.getThresholdsCrossed();
+console.log('Crossed:', crossed); // [25, 50, 75]
+```
+
+##### `scrollDepth.getDevice()`
+
+Get detected device type (for responsive thresholds).
+
+```typescript
+const device = experiences.scrollDepth.getDevice();
+// Returns: 'mobile' | 'tablet' | 'desktop'
+```
+
+##### `scrollDepth.getAdvancedMetrics()`
+
+Get detailed engagement metrics.
+
+```typescript
+const metrics = experiences.scrollDepth.getAdvancedMetrics();
+console.log(metrics);
+// {
+//   timeOnPage: 45000,
+//   directionChanges: 3,
+//   timeScrollingUp: 5000,
+//   thresholdTimes: { '25': 2500, '50': 12000, '75': 30000 }
+// }
+```
+
+##### `scrollDepth.reset()`
+
+Reset all tracking state.
+
+```typescript
+experiences.scrollDepth.reset();
+```
+
+#### Events
+
+**`trigger:scrollDepth`**
+
+```typescript
+experiences.on('trigger:scrollDepth', (event) => {
+  console.log('Scroll threshold crossed:', event.threshold);
+  console.log('Current:', event.percent);
+  console.log('Max reached:', event.maxPercent);
+  console.log('Engagement score:', event.engagementScore);
+});
+```
+
+**Event payload:**
+```typescript
+{
+  triggered: boolean;
+  timestamp: number;
+  percent: number;
+  maxPercent: number;
+  threshold: number;
+  thresholdsCrossed: number[];
+  velocity: number;
+  direction: 'up' | 'down' | null;
+  directionChanges: number;
+  timeToThreshold: number;
+  engagementScore: number;
+}
+```
+
+#### Migrating from Pathfora
+
+```diff
+- // Pathfora
+- var widget = new pathfora.Message({
+-   msg: 'You\'re almost done!',
+-   displayConditions: {
+-     scrollPercentageToDisplay: 75
+-   }
+- });
+
++ // Experience SDK
++ experiences.register('scroll-promo', {
++   type: 'banner',
++   content: {
++     message: 'You\'re almost done!'
++   },
++   targeting: {
++     custom: (ctx) => (ctx.triggers?.scrollDepth?.maxPercent || 0) >= 75
++   }
++ });
+```
+
+**Key Differences:**
+- ✅ **Multiple thresholds:** Track 25%, 50%, 75%, 90% simultaneously
+- ✅ **Throttled:** Optimized performance (configurable)
+- ✅ **Advanced metrics:** Velocity, direction, engagement scoring
+- ✅ **Device-aware:** Responsive threshold logic
+- ✅ **Time tracking:** Know how long it took to scroll
+- ✅ **Reset capability:** Re-trigger after reset
+
+---
