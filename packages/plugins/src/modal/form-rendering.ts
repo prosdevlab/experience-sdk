@@ -20,7 +20,7 @@ import {
   getStateButtonsStyles,
   getStateMessageStyles,
   getStateTitleStyles,
-  getSubmitButtonHoverColor,
+  getSubmitButtonHoverBg,
   getSubmitButtonStyles,
   getSuccessStateStyles,
 } from './form-styles';
@@ -168,16 +168,16 @@ export function renderSubmitButton(buttonConfig: ExperienceButton): HTMLButtonEl
   // Button text
   button.textContent = buttonConfig.text;
 
-  // Hover effect
-  const hoverColor = getSubmitButtonHoverColor();
+  // Hover effect using CSS variable
+  const hoverBg = getSubmitButtonHoverBg();
   button.onmouseover = () => {
-    button.style.backgroundColor = hoverColor;
+    button.style.backgroundColor = hoverBg;
   };
   button.onmouseout = () => {
-    button.style.backgroundColor = '#2563eb';
+    button.style.backgroundColor = ''; // Reset to CSS variable default
   };
 
-  // Custom styling
+  // Custom styling (applied last to allow overrides)
   if (buttonConfig.style) {
     Object.assign(button.style, buttonConfig.style);
   }
