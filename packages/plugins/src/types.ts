@@ -3,10 +3,9 @@
  * These types are re-exported by core for user convenience
  */
 
-/**
- * Experience content - varies by type
- */
-export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
+// Import modal content type from modal plugin
+import type { ModalContent as _ModalContent } from './modal/types';
+export type ModalContent = _ModalContent;
 
 /**
  * Experience button configuration (used across all experience types)
@@ -36,16 +35,6 @@ export interface BannerContent {
 }
 
 /**
- * Modal content configuration
- */
-export interface ModalContent {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-}
-
-/**
  * Tooltip content configuration
  */
 export interface TooltipContent {
@@ -54,22 +43,9 @@ export interface TooltipContent {
 }
 
 /**
- * Modal content configuration
+ * Experience content - varies by type
  */
-export interface ModalContent {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-}
-
-/**
- * Tooltip content configuration
- */
-export interface TooltipContent {
-  message: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-}
+export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
 
 /**
  * Experience definition
