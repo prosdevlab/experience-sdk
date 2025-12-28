@@ -38,10 +38,62 @@ export interface ModalContent {
   message: string;
   /** Array of action buttons */
   buttons?: ExperienceButton[];
+  /** Optional form configuration */
+  form?: FormConfig;
   /** Custom CSS class */
   className?: string;
   /** Inline styles */
   style?: Record<string, string>;
+}
+
+export interface FormConfig {
+  /** Array of form fields */
+  fields: FormField[];
+  /** Submit button configuration */
+  submitButton: ExperienceButton;
+  /** Success state after submission */
+  successState?: FormState;
+  /** Error state on submission failure */
+  errorState?: FormState;
+  /** Custom validation function (optional) */
+  validate?: (data: Record<string, string>) => ValidationResult;
+}
+
+export interface FormField {
+  /** Field name (used in form data) */
+  name: string;
+  /** Field type */
+  type: 'email' | 'text' | 'textarea' | 'tel' | 'url' | 'number';
+  /** Label text (optional) */
+  label?: string;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Required field (default: false) */
+  required?: boolean;
+  /** Custom validation pattern (regex) */
+  pattern?: string;
+  /** Error message for validation failure */
+  errorMessage?: string;
+  /** Custom CSS class */
+  className?: string;
+  /** Inline styles */
+  style?: Record<string, string>;
+}
+
+export interface FormState {
+  /** Title to show in success/error state */
+  title?: string;
+  /** Message to show */
+  message: string;
+  /** Optional buttons (e.g., "Close", "Try Again") */
+  buttons?: ExperienceButton[];
+}
+
+export interface ValidationResult {
+  /** Whether validation passed */
+  valid: boolean;
+  /** Validation errors by field name */
+  errors?: Record<string, string>;
 }
 
 export interface ModalPlugin {
@@ -51,6 +103,12 @@ export interface ModalPlugin {
   remove(experienceId: string): void;
   /** Check if a modal is showing */
   isShowing(experienceId?: string): boolean;
+  /** Show form success or error state */
+  showFormState(experienceId: string, state: 'success' | 'error'): void;
+  /** Reset form to initial state */
+  resetForm(experienceId: string): void;
+  /** Get current form data */
+  getFormData(experienceId: string): Record<string, string> | null;
 }
 
 export type { PluginFunction };

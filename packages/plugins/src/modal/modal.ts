@@ -1,6 +1,7 @@
 import type { SDK } from '@lytics/sdk-kit';
 import type { ExperienceButton } from '../types';
 import { sanitizeHTML } from '../utils/sanitize';
+import { renderForm } from './form-rendering';
 import type { ModalContent, ModalPlugin } from './types';
 
 /**
@@ -234,8 +235,13 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     message.style.cssText = `margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #444;`;
     contentWrapper.appendChild(message);
 
-    // Buttons
-    if (content.buttons && content.buttons.length > 0) {
+    // Form or Buttons
+    if (content.form) {
+      // Render form
+      const form = renderForm(experienceId, content.form);
+      contentWrapper.appendChild(form);
+    } else if (content.buttons && content.buttons.length > 0) {
+      // Render buttons
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'xp-modal__buttons';
       buttonContainer.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
