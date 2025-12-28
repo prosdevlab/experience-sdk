@@ -1,7 +1,9 @@
 import type { SDK } from '@lytics/sdk-kit';
 import type { ExperienceButton } from '../types';
 import { sanitizeHTML } from '../utils/sanitize';
-import { renderForm } from './form-rendering';
+import { renderForm, renderFormState } from './form-rendering';
+import { getInputErrorStyles } from './form-styles';
+import { validateField, validateForm } from './form-validation';
 import {
   getBackdropStyles,
   getButtonContainerStyles,
@@ -50,6 +52,8 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
   const activeModals = new Map<string, HTMLElement>();
   // Track focus before modal opened
   const previouslyFocusedElement = new Map<string, HTMLElement | null>();
+  // Track form data by experience ID
+  const formData = new Map<string, Record<string, string>>();
 
   /**
    * Get focusable elements within a container
@@ -268,6 +272,133 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
       // Render form
       const form = renderForm(experienceId, content.form);
       contentWrapper.appendChild(form);
+
+      // Store form config for later use (state rendering)
+      (container as any).__formConfig = content.form;
+
+      // Initialize form data
+      const data: Record<string, string> = {};
+      content.form.fields.forEach((field) => {
+        data[field.name] = '';
+      });
+      formData.set(experienceId, data);
+
+      // Add form event listeners
+      content.form.fields.forEach((field) => {
+        const input = form.querySelector(`#${experienceId}-${field.name}`) as
+          | HTMLInputElement
+          | HTMLTextAreaElement;
+        const errorEl = form.querySelector(`#${experienceId}-${field.name}-error`) as HTMLElement;
+
+        if (!input) return;
+
+        // Update form data on input change
+        input.addEventListener('input', () => {
+          const currentData = formData.get(experienceId) || {};
+          currentData[field.name] = input.value;
+          formData.set(experienceId, currentData);
+
+          // Emit change event
+          instance.emit('experiences:modal:form:change', {
+            experienceId,
+            field: field.name,
+            value: input.value,
+            formData: { ...currentData },
+            timestamp: Date.now(),
+          });
+        });
+
+        // Validate on blur
+        input.addEventListener('blur', () => {
+          const currentData = formData.get(experienceId) || {};
+          const result = validateField(field, currentData[field.name] || '');
+
+          if (!result.valid && result.errors) {
+            // Show error
+            input.style.cssText += `; ${getInputErrorStyles()}`;
+            input.setAttribute('aria-invalid', 'true');
+            errorEl.textContent = result.errors[field.name] || '';
+
+            // Emit validation event
+            instance.emit('experiences:modal:form:validation', {
+              experienceId,
+              field: field.name,
+              valid: false,
+              errors: result.errors,
+              timestamp: Date.now(),
+            });
+          } else {
+            // Clear error
+            input.style.cssText = input.style.cssText.replace(getInputErrorStyles(), '');
+            input.setAttribute('aria-invalid', 'false');
+            errorEl.textContent = '';
+
+            // Emit validation event
+            instance.emit('experiences:modal:form:validation', {
+              experienceId,
+              field: field.name,
+              valid: true,
+              timestamp: Date.now(),
+            });
+          }
+        });
+      });
+
+      // Handle form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!content.form) return;
+
+        const currentData = formData.get(experienceId) || {};
+        const result = validateForm(content.form, currentData);
+
+        if (!result.valid && result.errors) {
+          // Show all errors
+          content.form.fields.forEach((field) => {
+            if (result.errors?.[field.name]) {
+              const input = form.querySelector(
+                `#${experienceId}-${field.name}`
+              ) as HTMLInputElement;
+              const errorEl = form.querySelector(
+                `#${experienceId}-${field.name}-error`
+              ) as HTMLElement;
+
+              if (input) {
+                input.style.cssText += `; ${getInputErrorStyles()}`;
+                input.setAttribute('aria-invalid', 'true');
+              }
+              if (errorEl) {
+                errorEl.textContent = result.errors[field.name] || '';
+              }
+            }
+          });
+
+          // Emit validation failure
+          instance.emit('experiences:modal:form:validation', {
+            experienceId,
+            valid: false,
+            errors: result.errors,
+            timestamp: Date.now(),
+          });
+
+          return;
+        }
+
+        // Disable submit button
+        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Submitting...';
+        }
+
+        // Emit submit event
+        instance.emit('experiences:modal:form:submit', {
+          experienceId,
+          formData: { ...currentData },
+          timestamp: Date.now(),
+        });
+      });
     } else if (content.buttons && content.buttons.length > 0) {
       // Render buttons
       const buttonContainer = document.createElement('div');
@@ -438,12 +569,91 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     return activeModals.size > 0;
   };
 
+  /**
+   * Show form success or error state
+   */
+  const showFormState = (experienceId: string, state: 'success' | 'error'): void => {
+    const modal = activeModals.get(experienceId);
+    if (!modal) return;
+
+    const form = modal.querySelector('.xp-modal__form') as HTMLFormElement;
+    if (!form) return;
+
+    // Get the form config from the experience
+    // Note: We need to store this when the modal is created
+    const formConfig = (modal as any).__formConfig;
+    if (!formConfig) return;
+
+    const stateConfig = state === 'success' ? formConfig.successState : formConfig.errorState;
+    if (!stateConfig) return;
+
+    // Render state element
+    const stateEl = renderFormState(state, stateConfig);
+
+    // Replace form with state
+    form.replaceWith(stateEl);
+
+    // Emit state event
+    instance.emit('experiences:modal:form:state', {
+      experienceId,
+      state,
+      timestamp: Date.now(),
+    });
+  };
+
+  /**
+   * Reset form to initial state
+   */
+  const resetForm = (experienceId: string): void => {
+    const modal = activeModals.get(experienceId);
+    if (!modal) return;
+
+    const form = modal.querySelector('.xp-modal__form') as HTMLFormElement;
+    if (!form) return;
+
+    // Reset form element
+    form.reset();
+
+    // Clear form data
+    const data = formData.get(experienceId);
+    if (data) {
+      Object.keys(data).forEach((key) => {
+        data[key] = '';
+      });
+    }
+
+    // Clear all error messages
+    const errors = form.querySelectorAll('.xp-form__error');
+    errors.forEach((error) => {
+      (error as HTMLElement).textContent = '';
+    });
+
+    // Reset all inputs
+    const inputs = form.querySelectorAll('.xp-form__input') as NodeListOf<
+      HTMLInputElement | HTMLTextAreaElement
+    >;
+    inputs.forEach((input) => {
+      input.setAttribute('aria-invalid', 'false');
+      input.style.cssText = input.style.cssText.replace(getInputErrorStyles(), '');
+    });
+  };
+
+  /**
+   * Get current form data
+   */
+  const getFormData = (experienceId: string): Record<string, string> | null => {
+    return formData.get(experienceId) || null;
+  };
+
   // Expose public API
   plugin.expose({
     modal: {
       show: showModal,
       remove: removeModal,
       isShowing,
+      showFormState,
+      resetForm,
+      getFormData,
     } as ModalPlugin,
   });
 

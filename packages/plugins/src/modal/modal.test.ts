@@ -712,15 +712,6 @@ describe('Modal Plugin', () => {
   });
 
   describe('Mobile Behavior', () => {
-    // Note: Mobile detection relies on window.innerWidth which is difficult to mock reliably
-    // in Node.js test environments (jsdom/happy-dom). These tests verify the configuration API.
-    // Manual browser testing confirms mobile behavior works correctly.
-
-    it.skip('should auto-enable fullscreen for lg size on mobile', async () => {
-      // This test requires a real browser environment to properly test window.innerWidth
-      // See vitest.browser.config.ts for browser-based tests
-    });
-
     it('should respect mobileFullscreen: false override', async () => {
       // Test configuration API (doesn't depend on window.innerWidth)
       const newSdk = initPlugin({
@@ -728,7 +719,7 @@ describe('Modal Plugin', () => {
           size: 'lg',
           mobileFullscreen: false,
         },
-      });
+      }) as SDK & { modal: any };
       await newSdk.init();
 
       const experience = {
@@ -898,6 +889,406 @@ describe('Modal Plugin', () => {
 
       const modal = document.querySelector('.xp-modal') as HTMLElement;
       expect(modal.style.transition).toContain('500ms');
+    });
+  });
+
+  describe('Form Support', () => {
+    it('should render form with fields', () => {
+      const experience = {
+        id: 'form-test',
+        layout: 'modal',
+        content: {
+          title: 'Newsletter Signup',
+          message: 'Subscribe to our newsletter',
+          form: {
+            fields: [
+              {
+                name: 'email',
+                type: 'email' as const,
+                label: 'Email',
+                required: true,
+                placeholder: 'you@example.com',
+              },
+              { name: 'name', type: 'text' as const, label: 'Name', required: false },
+            ],
+            submitButton: { text: 'Subscribe', action: 'submit' },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      const form = document.querySelector('.xp-modal__form');
+      expect(form).toBeTruthy();
+
+      const emailInput = document.querySelector('#form-test-email') as HTMLInputElement;
+      const nameInput = document.querySelector('#form-test-name') as HTMLInputElement;
+      const submitButton = form?.querySelector('button[type="submit"]');
+
+      expect(emailInput).toBeTruthy();
+      expect(emailInput.type).toBe('email');
+      expect(emailInput.placeholder).toBe('you@example.com');
+      expect(emailInput.required).toBe(true);
+
+      expect(nameInput).toBeTruthy();
+      expect(nameInput.type).toBe('text');
+
+      expect(submitButton).toBeTruthy();
+      expect(submitButton?.textContent).toBe('Subscribe');
+    });
+
+    it('should emit change event on input', async () => {
+      const experience = {
+        id: 'change-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      const changeHandler = vi.fn();
+      sdk.on('experiences:modal:form:change', changeHandler);
+
+      sdk.modal.show(experience);
+
+      const input = document.querySelector('#change-test-email') as HTMLInputElement;
+      input.value = 'test@example.com';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(changeHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'change-test',
+            field: 'email',
+            value: 'test@example.com',
+          })
+        );
+      });
+    });
+
+    it('should validate field on blur', async () => {
+      const experience = {
+        id: 'validation-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const, required: true }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      const validationHandler = vi.fn();
+      sdk.on('experiences:modal:form:validation', validationHandler);
+
+      sdk.modal.show(experience);
+
+      const input = document.querySelector('#validation-test-email') as HTMLInputElement;
+      const errorEl = document.querySelector('#validation-test-email-error') as HTMLElement;
+
+      // Blur with empty value (required field)
+      input.value = '';
+      input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(validationHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'validation-test',
+            field: 'email',
+            valid: false,
+          })
+        );
+      });
+
+      expect(errorEl.textContent).toContain('required');
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('should clear errors when field becomes valid', async () => {
+      const experience = {
+        id: 'clear-error-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const, required: true }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      const input = document.querySelector('#clear-error-test-email') as HTMLInputElement;
+      const errorEl = document.querySelector('#clear-error-test-email-error') as HTMLElement;
+
+      // First, trigger error
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(errorEl.textContent).toContain('required');
+      });
+
+      // Now fix the value
+      input.value = 'valid@example.com';
+      input.dispatchEvent(new Event('input', { bubbles: true })); // Update formData first!
+      input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(errorEl.textContent).toBe('');
+        expect(input.getAttribute('aria-invalid')).toBe('false');
+      });
+    });
+
+    it('should validate entire form on submit', async () => {
+      const experience = {
+        id: 'submit-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [
+              { name: 'email', type: 'email' as const, required: true },
+              { name: 'name', type: 'text' as const, required: true },
+            ],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      const submitHandler = vi.fn();
+      const validationHandler = vi.fn();
+      sdk.on('experiences:modal:form:submit', submitHandler);
+      sdk.on('experiences:modal:form:validation', validationHandler);
+
+      sdk.modal.show(experience);
+
+      const form = document.querySelector('.xp-modal__form') as HTMLFormElement;
+      const emailError = document.querySelector('#submit-test-email-error') as HTMLElement;
+      const nameError = document.querySelector('#submit-test-name-error') as HTMLElement;
+
+      // Submit with empty values
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+      await vi.waitFor(() => {
+        expect(emailError.textContent).toContain('required');
+        expect(nameError.textContent).toContain('required');
+      });
+
+      // Should not emit submit event
+      expect(submitHandler).not.toHaveBeenCalled();
+    });
+
+    it('should emit submit event when form is valid', async () => {
+      const experience = {
+        id: 'valid-submit-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const, required: true }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      const submitHandler = vi.fn();
+      sdk.on('experiences:modal:form:submit', submitHandler);
+
+      sdk.modal.show(experience);
+
+      const form = document.querySelector('.xp-modal__form') as HTMLFormElement;
+      const input = document.querySelector('#valid-submit-test-email') as HTMLInputElement;
+
+      // Fill in valid data
+      input.value = 'test@example.com';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Submit form
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+      await vi.waitFor(() => {
+        expect(submitHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'valid-submit-test',
+            formData: { email: 'test@example.com' },
+          })
+        );
+      });
+    });
+
+    it('should disable submit button during submission', async () => {
+      const experience = {
+        id: 'disable-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const, required: true }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      const form = document.querySelector('.xp-modal__form') as HTMLFormElement;
+      const input = document.querySelector('#disable-test-email') as HTMLInputElement;
+      const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+      input.value = 'test@example.com';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+      await vi.waitFor(() => {
+        expect(submitButton.disabled).toBe(true);
+        expect(submitButton.textContent).toBe('Submitting...');
+      });
+    });
+
+    it('should get form data', () => {
+      const experience = {
+        id: 'get-data-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [
+              { name: 'email', type: 'email' as const },
+              { name: 'name', type: 'text' as const },
+            ],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      const emailInput = document.querySelector('#get-data-test-email') as HTMLInputElement;
+      const nameInput = document.querySelector('#get-data-test-name') as HTMLInputElement;
+
+      emailInput.value = 'test@example.com';
+      emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+      nameInput.value = 'John Doe';
+      nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const data = sdk.modal.getFormData('get-data-test');
+      expect(data).toEqual({
+        email: 'test@example.com',
+        name: 'John Doe',
+      });
+    });
+
+    it('should reset form', () => {
+      const experience = {
+        id: 'reset-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const }],
+            submitButton: { text: 'Submit', action: 'submit' },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      const input = document.querySelector('#reset-test-email') as HTMLInputElement;
+      const errorEl = document.querySelector('#reset-test-email-error') as HTMLElement;
+
+      // Add some data and error
+      input.value = 'test@example.com';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      errorEl.textContent = 'Some error';
+
+      sdk.modal.resetForm('reset-test');
+
+      expect(input.value).toBe('');
+      expect(errorEl.textContent).toBe('');
+
+      const data = sdk.modal.getFormData('reset-test');
+      expect(data).toEqual({ email: '' });
+    });
+
+    it('should show success state', async () => {
+      const experience = {
+        id: 'success-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const }],
+            submitButton: { text: 'Submit', action: 'submit' },
+            successState: {
+              title: 'Success!',
+              message: 'Thank you for subscribing',
+            },
+          },
+        },
+      };
+
+      const stateHandler = vi.fn();
+      sdk.on('experiences:modal:form:state', stateHandler);
+
+      sdk.modal.show(experience);
+
+      sdk.modal.showFormState('success-test', 'success');
+
+      await vi.waitFor(() => {
+        expect(stateHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'success-test',
+            state: 'success',
+          })
+        );
+      });
+
+      const form = document.querySelector('.xp-modal__form');
+      const state = document.querySelector('.xp-form__state--success');
+
+      expect(form).toBeFalsy();
+      expect(state).toBeTruthy();
+      expect(state?.textContent).toContain('Success!');
+      expect(state?.textContent).toContain('Thank you for subscribing');
+    });
+
+    it('should show error state', async () => {
+      const experience = {
+        id: 'error-test',
+        layout: 'modal',
+        content: {
+          message: 'Test',
+          form: {
+            fields: [{ name: 'email', type: 'email' as const }],
+            submitButton: { text: 'Submit', action: 'submit' },
+            errorState: {
+              title: 'Error',
+              message: 'Something went wrong',
+            },
+          },
+        },
+      };
+
+      sdk.modal.show(experience);
+
+      sdk.modal.showFormState('error-test', 'error');
+
+      await vi.waitFor(() => {
+        const state = document.querySelector('.xp-form__state--error');
+        expect(state).toBeTruthy();
+        expect(state?.textContent).toContain('Error');
+        expect(state?.textContent).toContain('Something went wrong');
+      });
     });
   });
 });
