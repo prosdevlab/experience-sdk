@@ -176,6 +176,15 @@ export interface TriggerState {
     /** Number of visibility changes */
     visibilityChanges?: number;
   };
+  /** Modal trigger state (when modal is shown) */
+  modal?: {
+    triggered: boolean;
+    timestamp?: number;
+    /** Experience ID of the shown modal */
+    experienceId?: string;
+    /** Whether the modal is currently showing */
+    shown?: boolean;
+  };
   /** Extensible for future triggers */
   [key: string]: any;
 }

@@ -35,6 +35,9 @@
         "packages/plugins/src/exit-intent/exit-intent.ts",
         "packages/plugins/src/scroll-depth/scroll-depth.ts",
         "packages/plugins/src/page-visits/page-visits.ts",
+        "packages/plugins/src/time-delay/time-delay.ts",
+        "packages/plugins/src/modal/modal.ts",
+        "packages/plugins/src/modal/types.ts",
         "packages/plugins/src/utils/sanitize.ts",
         "specs/**/contracts/types.ts",
         "docs/**/*.tsx"

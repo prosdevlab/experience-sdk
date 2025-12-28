@@ -9,20 +9,26 @@
 export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
 
 /**
+ * Experience button configuration (used across all experience types)
+ */
+export interface ExperienceButton {
+  text: string;
+  action?: string;
+  url?: string;
+  variant?: 'primary' | 'secondary' | 'link';
+  dismiss?: boolean;
+  metadata?: Record<string, any>;
+  className?: string;
+  style?: Record<string, string>;
+}
+
+/**
  * Banner content configuration
  */
 export interface BannerContent {
   title?: string;
   message: string;
-  buttons?: Array<{
-    text: string;
-    action?: string;
-    url?: string;
-    variant?: 'primary' | 'secondary' | 'link';
-    metadata?: Record<string, any>;
-    className?: string;
-    style?: Record<string, string>;
-  }>;
+  buttons?: ExperienceButton[];
   dismissable?: boolean;
   position?: 'top' | 'bottom';
   className?: string;
