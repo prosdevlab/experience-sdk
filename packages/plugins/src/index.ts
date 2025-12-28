@@ -10,6 +10,7 @@ export * from './banner';
 export * from './debug';
 export * from './exit-intent';
 export * from './frequency';
+export * from './modal';
 export * from './page-visits';
 export * from './scroll-depth';
 export * from './time-delay';

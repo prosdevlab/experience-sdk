@@ -329,10 +329,9 @@ export const scrollDepthPlugin: PluginFunction = (plugin, instance, config) => {
   }
 
   // Setup destroy handler
-  const destroyHandler = () => {
+  instance.on('sdk:destroy', () => {
     cleanup();
-  };
-  instance.on('destroy', destroyHandler);
+  });
 
   // Expose API
   plugin.expose({
@@ -395,6 +394,5 @@ export const scrollDepthPlugin: PluginFunction = (plugin, instance, config) => {
   // Return cleanup function
   return () => {
     cleanup();
-    instance.off('destroy', destroyHandler);
   };
 };

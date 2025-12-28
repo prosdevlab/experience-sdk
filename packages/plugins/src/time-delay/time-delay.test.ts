@@ -380,7 +380,7 @@ describe('Time Delay Plugin', () => {
       vi.advanceTimersByTime(2000);
 
       // Destroy SDK
-      sdk.emit('destroy');
+      await sdk.destroy();
 
       // Advance past trigger time
       vi.advanceTimersByTime(5000);
@@ -396,7 +396,7 @@ describe('Time Delay Plugin', () => {
       const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
 
       // Destroy SDK
-      sdk.emit('destroy');
+      await sdk.destroy();
 
       // Should have removed visibility listener
       expect(removeEventListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));

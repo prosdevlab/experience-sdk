@@ -290,8 +290,7 @@ export const timeDelayPlugin: PluginFunction = (plugin, instance, config) => {
   initialize();
 
   // Cleanup on instance destroy
-  const destroyHandler = () => {
+  instance.on('sdk:destroy', () => {
     cleanup();
-  };
-  instance.on('destroy', destroyHandler);
+  });
 };
