@@ -19,6 +19,11 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
       dismissable: true,
       backdropDismiss: true,
       zIndex: 10001,
+      size: 'md',
+      mobileFullscreen: false,
+      position: 'center',
+      animation: 'fade',
+      animationDuration: 200,
     },
   });
 
@@ -78,22 +83,76 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
   };
 
   /**
+   * Get modal size width
+   */
+  const getSizeWidth = (size: string): string => {
+    switch (size) {
+      case 'sm':
+        return '400px';
+      case 'md':
+        return '600px';
+      case 'lg':
+        return '800px';
+      case 'fullscreen':
+        return '100vw';
+      case 'auto':
+        return 'auto';
+      default:
+        return '600px'; // md default
+    }
+  };
+
+  /**
+   * Check if mobile viewport
+   */
+  const isMobile = (): boolean => {
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  };
+
+  /**
    * Render modal DOM structure
    */
   const renderModal = (experienceId: string, content: ModalContent): HTMLElement => {
     const modalConfig = instance.get('modal') || {};
     const zIndex = modalConfig.zIndex || 10001;
+    const size = modalConfig.size || 'md';
+    const position = modalConfig.position || 'center';
+    const animation = modalConfig.animation || 'fade';
+    const animationDuration = modalConfig.animationDuration || 200;
+
+    // Determine if should be fullscreen
+    const mobileFullscreen =
+      modalConfig.mobileFullscreen !== undefined ? modalConfig.mobileFullscreen : size === 'lg'; // Auto-enable for lg size
+    const shouldBeFullscreen = size === 'fullscreen' || (mobileFullscreen && isMobile());
 
     // Create modal container
     const container = document.createElement('div');
-    container.className = `xp-modal ${content.className || ''}`;
+    const sizeClass = shouldBeFullscreen ? 'fullscreen' : size;
+    const positionClass = position === 'bottom' ? 'xp-modal--bottom' : 'xp-modal--center';
+    const animationClass = animation !== 'none' ? `xp-modal--${animation}` : '';
+    container.className =
+      `xp-modal xp-modal--${sizeClass} ${positionClass} ${animationClass} ${content.className || ''}`.trim();
     container.setAttribute('data-xp-id', experienceId);
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
     if (content.title) {
       container.setAttribute('aria-labelledby', `xp-modal-title-${experienceId}`);
     }
-    container.style.cssText = `position: fixed; inset: 0; z-index: ${zIndex}; display: flex; align-items: center; justify-content: center;`;
+
+    // Container styles
+    const alignItems = position === 'bottom' ? 'flex-end' : 'center';
+    container.style.cssText = `position: fixed; inset: 0; z-index: ${zIndex}; display: flex; align-items: ${alignItems}; justify-content: center;`;
+
+    // Apply animation
+    if (animation !== 'none') {
+      container.style.opacity = '0';
+      container.style.transition = `opacity ${animationDuration}ms ease-in-out`;
+
+      if (animation === 'slide-up') {
+        container.style.transform = 'translateY(100%)';
+        container.style.transition += `, transform ${animationDuration}ms ease-out`;
+      }
+    }
 
     // Apply custom styles
     if (content.style) {
@@ -110,9 +169,30 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
 
     // Dialog
     const dialog = document.createElement('div');
-    dialog.className = 'xp-modal__dialog';
-    dialog.style.cssText = `position: relative; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px;`;
+    const dialogWidth = shouldBeFullscreen ? '100%' : size === 'auto' ? 'none' : getSizeWidth(size);
+    const dialogHeight = shouldBeFullscreen ? '100%' : 'auto';
+    const dialogMaxWidth = shouldBeFullscreen ? '100%' : size === 'auto' ? 'none' : '90%';
+    const dialogBorderRadius = shouldBeFullscreen ? '0' : '8px';
+    const dialogPadding = content.image ? '0' : '24px';
+
+    dialog.className = `xp-modal__dialog${content.image ? ' xp-modal__dialog--has-image' : ''}`;
+    dialog.style.cssText = `position: relative; background: white; border-radius: ${dialogBorderRadius}; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: ${dialogWidth}; width: ${dialogMaxWidth}; height: ${dialogHeight}; max-height: ${shouldBeFullscreen ? '100%' : '90vh'}; overflow-y: auto; padding: ${dialogPadding};`;
     container.appendChild(dialog);
+
+    // Hero image (if provided)
+    if (content.image) {
+      const img = document.createElement('img');
+      img.className = 'xp-modal__hero-image';
+      img.src = content.image.src;
+      img.alt = content.image.alt;
+      img.loading = 'lazy';
+
+      // Use custom maxHeight if provided, otherwise default based on viewport
+      const maxHeight = content.image.maxHeight || (isMobile() ? 200 : 300);
+      img.style.cssText = `width: 100%; height: auto; max-height: ${maxHeight}px; object-fit: cover; border-radius: ${shouldBeFullscreen ? '0' : '8px 8px 0 0'}; display: block; margin: 0;`;
+
+      dialog.appendChild(img);
+    }
 
     // Close button
     if (modalConfig.dismissable !== false) {
@@ -134,7 +214,8 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     // Content wrapper
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'xp-modal__content';
-    contentWrapper.style.cssText = 'padding-right: 24px;';
+    const contentPadding = content.image ? '24px' : '24px 24px 0 24px';
+    contentWrapper.style.cssText = `padding: ${contentPadding};`;
 
     // Title
     if (content.title) {
@@ -250,6 +331,20 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     const modal = renderModal(experienceId, experience.content);
     document.body.appendChild(modal);
     activeModals.set(experienceId, modal);
+
+    // Trigger animation after adding to DOM
+    const modalConfig = instance.get('modal') || {};
+    const animation = modalConfig.animation || 'fade';
+
+    if (animation !== 'none') {
+      requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+
+        if (animation === 'slide-up') {
+          modal.style.transform = 'translateY(0)';
+        }
+      });
+    }
 
     // Setup focus trap
     const cleanupFocusTrap = createFocusTrap(modal);
