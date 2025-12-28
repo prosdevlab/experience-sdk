@@ -86,15 +86,15 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         left: 0;
         right: 0;
         width: 100%;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
+        font-family: var(--xp-banner-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        font-size: var(--xp-banner-font-size, 14px);
+        line-height: var(--xp-banner-line-height, 1.5);
         box-sizing: border-box;
-        z-index: 10000;
-        background: #ffffff;
-        color: #111827;
-        border-bottom: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        z-index: var(--xp-banner-z-index, 10000);
+        background: var(--xp-banner-bg, #ffffff);
+        color: var(--xp-banner-color, #111827);
+        border-bottom: var(--xp-banner-border-width, 1px) solid var(--xp-banner-border-color, #e5e7eb);
+        box-shadow: var(--xp-banner-shadow, 0 1px 3px 0 rgba(0, 0, 0, 0.05));
       }
       
       .xp-banner--top {
@@ -104,17 +104,17 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       .xp-banner--bottom {
         bottom: 0;
         border-bottom: none;
-        border-top: 1px solid #e5e7eb;
-        box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05);
+        border-top: var(--xp-banner-border-width, 1px) solid var(--xp-banner-border-color, #e5e7eb);
+        box-shadow: var(--xp-banner-shadow-bottom, 0 -1px 3px 0 rgba(0, 0, 0, 0.05));
       }
       
       .xp-banner__container {
         display: flex;
         align-items: center;
-        gap: 16px;
-        max-width: 1280px;
+        gap: var(--xp-banner-gap, 16px);
+        max-width: var(--xp-banner-max-width, 1280px);
         margin: 0 auto;
-        padding: 14px 24px;
+        padding: var(--xp-banner-padding, 14px 24px);
       }
       
       .xp-banner__content {
@@ -122,36 +122,37 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--xp-banner-content-gap, 4px);
       }
       
       .xp-banner__title {
-        font-weight: 600;
+        font-weight: var(--xp-banner-title-weight, 600);
         margin: 0;
-        font-size: 15px;
-        line-height: 1.4;
+        font-size: var(--xp-banner-title-size, 15px);
+        line-height: var(--xp-banner-title-line-height, 1.4);
+        color: var(--xp-banner-title-color, inherit);
       }
       
       .xp-banner__message {
         margin: 0;
-        font-size: 14px;
-        line-height: 1.5;
-        color: #6b7280;
+        font-size: var(--xp-banner-message-size, 14px);
+        line-height: var(--xp-banner-message-line-height, 1.5);
+        color: var(--xp-banner-message-color, #6b7280);
       }
       
       .xp-banner__buttons {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--xp-banner-buttons-gap, 8px);
         flex-shrink: 0;
       }
       
       .xp-banner__button {
-        padding: 8px 16px;
+        padding: var(--xp-banner-button-padding, 8px 16px);
         border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
+        border-radius: var(--xp-banner-button-radius, 6px);
+        font-size: var(--xp-banner-button-font-size, 14px);
+        font-weight: var(--xp-banner-button-font-weight, 500);
         cursor: pointer;
         transition: all 0.2s;
         text-decoration: none;
@@ -162,64 +163,64 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
       }
       
       .xp-banner__button--primary {
-        background: #2563eb;
-        color: #ffffff;
+        background: var(--xp-banner-button-primary-bg, #2563eb);
+        color: var(--xp-banner-button-primary-color, #ffffff);
       }
       
       .xp-banner__button--primary:hover {
-        background: #1d4ed8;
+        background: var(--xp-banner-button-primary-bg-hover, #1d4ed8);
       }
       
       .xp-banner__button--secondary {
-        background: #f3f4f6;
-        color: #374151;
-        border: 1px solid #e5e7eb;
+        background: var(--xp-banner-button-secondary-bg, #f3f4f6);
+        color: var(--xp-banner-button-secondary-color, #374151);
+        border: var(--xp-banner-border-width, 1px) solid var(--xp-banner-button-secondary-border, #e5e7eb);
       }
       
       .xp-banner__button--secondary:hover {
-        background: #e5e7eb;
+        background: var(--xp-banner-button-secondary-bg-hover, #e5e7eb);
       }
       
       .xp-banner__button--link {
         background: transparent;
-        color: #2563eb;
-        padding: 6px 12px;
-        font-weight: 400;
+        color: var(--xp-banner-button-link-color, #2563eb);
+        padding: var(--xp-banner-button-link-padding, 6px 12px);
+        font-weight: var(--xp-banner-button-link-font-weight, 400);
       }
       
       .xp-banner__button--link:hover {
-        background: #f3f4f6;
+        background: var(--xp-banner-button-link-bg-hover, #f3f4f6);
         text-decoration: underline;
       }
       
       .xp-banner__close {
         background: transparent;
         border: none;
-        color: #9ca3af;
-        font-size: 20px;
+        color: var(--xp-banner-close-color, #9ca3af);
+        font-size: var(--xp-banner-close-size, 20px);
         line-height: 1;
         cursor: pointer;
-        padding: 4px;
+        padding: var(--xp-banner-close-padding, 4px);
         margin: 0;
         transition: color 0.2s;
         flex-shrink: 0;
-        width: 28px;
-        height: 28px;
+        width: var(--xp-banner-close-width, 28px);
+        height: var(--xp-banner-close-height, 28px);
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 4px;
+        border-radius: var(--xp-banner-close-radius, 4px);
       }
       
       .xp-banner__close:hover {
-        color: #111827;
-        background: #f3f4f6;
+        color: var(--xp-banner-close-color-hover, #111827);
+        background: var(--xp-banner-close-bg-hover, #f3f4f6);
       }
       
       @media (max-width: 640px) {
         .xp-banner__container {
           flex-wrap: wrap;
-          padding: 14px 16px;
+          padding: var(--xp-banner-padding-mobile, 14px 16px);
           position: relative;
         }
         
@@ -244,55 +245,55 @@ export const bannerPlugin: PluginFunction = (plugin, instance, config) => {
         }
       }
       
-      /* Dark mode support */
+      /* Dark mode support - override CSS variables */
       @media (prefers-color-scheme: dark) {
         .xp-banner {
-          background: #111827;
-          color: #f9fafb;
-          border-bottom-color: #1f2937;
+          background: var(--xp-banner-bg-dark, #111827);
+          color: var(--xp-banner-color-dark, #f9fafb);
+          border-bottom-color: var(--xp-banner-border-color-dark, #1f2937);
         }
         
         .xp-banner--bottom {
-          border-top-color: #1f2937;
+          border-top-color: var(--xp-banner-border-color-dark, #1f2937);
         }
         
         .xp-banner__message {
-          color: #9ca3af;
+          color: var(--xp-banner-message-color-dark, #9ca3af);
         }
         
         .xp-banner__button--primary {
-          background: #3b82f6;
+          background: var(--xp-banner-button-primary-bg-dark, #3b82f6);
         }
         
         .xp-banner__button--primary:hover {
-          background: #2563eb;
+          background: var(--xp-banner-button-primary-bg-hover-dark, #2563eb);
         }
         
         .xp-banner__button--secondary {
-          background: #1f2937;
-          color: #f9fafb;
-          border-color: #374151;
+          background: var(--xp-banner-button-secondary-bg-dark, #1f2937);
+          color: var(--xp-banner-button-secondary-color-dark, #f9fafb);
+          border-color: var(--xp-banner-button-secondary-border-dark, #374151);
         }
         
         .xp-banner__button--secondary:hover {
-          background: #374151;
+          background: var(--xp-banner-button-secondary-bg-hover-dark, #374151);
         }
         
         .xp-banner__button--link {
-          color: #60a5fa;
+          color: var(--xp-banner-button-link-color-dark, #60a5fa);
         }
         
         .xp-banner__button--link:hover {
-          background: #1f2937;
+          background: var(--xp-banner-button-link-bg-hover-dark, #1f2937);
         }
         
         .xp-banner__close {
-          color: #6b7280;
+          color: var(--xp-banner-close-color-dark, #6b7280);
         }
         
         .xp-banner__close:hover {
-          color: #f9fafb;
-          background: #1f2937;
+          color: var(--xp-banner-close-color-hover-dark, #f9fafb);
+          background: var(--xp-banner-close-bg-hover-dark, #1f2937);
         }
       }
     `;

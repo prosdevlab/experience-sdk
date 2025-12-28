@@ -2,6 +2,24 @@ import type { SDK } from '@lytics/sdk-kit';
 import type { ExperienceButton } from '../types';
 import { sanitizeHTML } from '../utils/sanitize';
 import { renderForm } from './form-rendering';
+import {
+  getBackdropStyles,
+  getButtonContainerStyles,
+  getCloseButtonDefaultOpacity,
+  getCloseButtonHoverOpacity,
+  getCloseButtonStyles,
+  getContentWrapperStyles,
+  getDialogStyles,
+  getHeroImageStyles,
+  getMessageStyles,
+  getPrimaryButtonDefaultBg,
+  getPrimaryButtonHoverBg,
+  getPrimaryButtonStyles,
+  getSecondaryButtonDefaultBg,
+  getSecondaryButtonHoverBg,
+  getSecondaryButtonStyles,
+  getTitleStyles,
+} from './modal-styles';
 import type { ModalContent, ModalPlugin } from './types';
 
 /**
@@ -165,7 +183,7 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     // Backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'xp-modal__backdrop';
-    backdrop.style.cssText = `position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.5);`;
+    backdrop.style.cssText = getBackdropStyles();
     container.appendChild(backdrop);
 
     // Dialog
@@ -177,7 +195,14 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     const dialogPadding = content.image ? '0' : '24px';
 
     dialog.className = `xp-modal__dialog${content.image ? ' xp-modal__dialog--has-image' : ''}`;
-    dialog.style.cssText = `position: relative; background: white; border-radius: ${dialogBorderRadius}; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: ${dialogWidth}; width: ${dialogMaxWidth}; height: ${dialogHeight}; max-height: ${shouldBeFullscreen ? '100%' : '90vh'}; overflow-y: auto; padding: ${dialogPadding};`;
+    dialog.style.cssText = getDialogStyles({
+      width: dialogWidth,
+      maxWidth: dialogMaxWidth,
+      height: dialogHeight,
+      maxHeight: shouldBeFullscreen ? '100%' : '90vh',
+      borderRadius: dialogBorderRadius,
+      padding: dialogPadding,
+    });
     container.appendChild(dialog);
 
     // Hero image (if provided)
@@ -190,7 +215,10 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
 
       // Use custom maxHeight if provided, otherwise default based on viewport
       const maxHeight = content.image.maxHeight || (isMobile() ? 200 : 300);
-      img.style.cssText = `width: 100%; height: auto; max-height: ${maxHeight}px; object-fit: cover; border-radius: ${shouldBeFullscreen ? '0' : '8px 8px 0 0'}; display: block; margin: 0;`;
+      img.style.cssText = getHeroImageStyles({
+        maxHeight,
+        borderRadius: shouldBeFullscreen ? '0' : '8px 8px 0 0',
+      });
 
       dialog.appendChild(img);
     }
@@ -201,12 +229,12 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
       closeButton.className = 'xp-modal__close';
       closeButton.setAttribute('aria-label', 'Close dialog');
       closeButton.innerHTML = '&times;';
-      closeButton.style.cssText = `position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; padding: 4px 8px; color: #666; opacity: 0.7; transition: opacity 0.2s;`;
+      closeButton.style.cssText = getCloseButtonStyles();
       closeButton.onmouseover = () => {
-        closeButton.style.opacity = '1';
+        closeButton.style.opacity = getCloseButtonHoverOpacity();
       };
       closeButton.onmouseout = () => {
-        closeButton.style.opacity = '0.7';
+        closeButton.style.opacity = getCloseButtonDefaultOpacity();
       };
       closeButton.onclick = () => removeModal(experienceId);
       dialog.appendChild(closeButton);
@@ -216,7 +244,7 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'xp-modal__content';
     const contentPadding = content.image ? '24px' : '24px 24px 0 24px';
-    contentWrapper.style.cssText = `padding: ${contentPadding};`;
+    contentWrapper.style.cssText = getContentWrapperStyles(contentPadding);
 
     // Title
     if (content.title) {
@@ -224,7 +252,7 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
       title.id = `xp-modal-title-${experienceId}`;
       title.className = 'xp-modal__title';
       title.textContent = content.title;
-      title.style.cssText = `margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #111;`;
+      title.style.cssText = getTitleStyles();
       contentWrapper.appendChild(title);
     }
 
@@ -232,7 +260,7 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     const message = document.createElement('div');
     message.className = 'xp-modal__message';
     message.innerHTML = sanitizeHTML(content.message);
-    message.style.cssText = `margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #444;`;
+    message.style.cssText = getMessageStyles();
     contentWrapper.appendChild(message);
 
     // Form or Buttons
@@ -244,36 +272,31 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
       // Render buttons
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'xp-modal__buttons';
-      buttonContainer.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+      buttonContainer.style.cssText = getButtonContainerStyles();
 
       content.buttons.forEach((button: ExperienceButton) => {
         const btn = document.createElement('button');
         btn.className = `xp-modal__button xp-modal__button--${button.variant || 'secondary'}`;
         btn.textContent = button.text;
 
-        // Base button styles
-        let buttonStyles = `padding: 10px 20px; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s; border: none;`;
-
-        // Variant styles
+        // Apply button styles based on variant
         if (button.variant === 'primary') {
-          buttonStyles += ` background: #2563eb; color: white;`;
+          btn.style.cssText = getPrimaryButtonStyles();
           btn.onmouseover = () => {
-            btn.style.background = '#1d4ed8';
+            btn.style.background = getPrimaryButtonHoverBg();
           };
           btn.onmouseout = () => {
-            btn.style.background = '#2563eb';
+            btn.style.background = getPrimaryButtonDefaultBg();
           };
         } else {
-          buttonStyles += ` background: #f3f4f6; color: #374151;`;
+          btn.style.cssText = getSecondaryButtonStyles();
           btn.onmouseover = () => {
-            btn.style.background = '#e5e7eb';
+            btn.style.background = getSecondaryButtonHoverBg();
           };
           btn.onmouseout = () => {
-            btn.style.background = '#f3f4f6';
+            btn.style.background = getSecondaryButtonDefaultBg();
           };
         }
-
-        btn.style.cssText = buttonStyles;
 
         btn.onclick = () => {
           instance.emit('experiences:action', {

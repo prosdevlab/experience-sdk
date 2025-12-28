@@ -1,11 +1,16 @@
 /**
- * Form styling helpers inspired by Tailwind CSS
+ * Form styling with CSS variables for theming
  *
- * Clean, modern form styles matching Tailwind's design patterns:
- * - Subtle borders with focus states
- * - Blue focus rings
- * - Proper spacing and typography
- * - Clear error states
+ * Design tokens inspired by Tailwind CSS, fully customizable via CSS variables.
+ * Users can override by setting CSS variables in their stylesheet.
+ *
+ * @example
+ * ```css
+ * :root {
+ *   --xp-form-input-border: #3b82f6;
+ *   --xp-form-input-focus-ring: rgba(59, 130, 246, 0.2);
+ * }
+ * ```
  */
 
 /**
@@ -13,10 +18,10 @@
  */
 export function getFormStyles(): string {
   return `
-    margin-top: 16px;
+    margin-top: var(--xp-form-spacing, 16px);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--xp-form-gap, 16px);
   `.trim();
 }
 
@@ -27,7 +32,7 @@ export function getFieldStyles(): string {
   return `
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--xp-field-gap, 6px);
   `.trim();
 }
 
@@ -36,9 +41,9 @@ export function getFieldStyles(): string {
  */
 export function getLabelStyles(): string {
   return `
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
+    font-size: var(--xp-label-font-size, 14px);
+    font-weight: var(--xp-label-font-weight, 500);
+    color: var(--xp-label-color, #374151);
     line-height: 1.5;
   `.trim();
 }
@@ -48,7 +53,7 @@ export function getLabelStyles(): string {
  */
 export function getRequiredStyles(): string {
   return `
-    color: #ef4444;
+    color: var(--xp-required-color, #ef4444);
   `.trim();
 }
 
@@ -57,13 +62,13 @@ export function getRequiredStyles(): string {
  */
 export function getInputStyles(): string {
   return `
-    padding: 8px 12px;
-    font-size: 14px;
+    padding: var(--xp-input-padding, 8px 12px);
+    font-size: var(--xp-input-font-size, 14px);
     line-height: 1.5;
-    color: #111827;
-    background-color: white;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+    color: var(--xp-input-color, #111827);
+    background-color: var(--xp-input-bg, white);
+    border: var(--xp-input-border-width, 1px) solid var(--xp-input-border-color, #d1d5db);
+    border-radius: var(--xp-input-radius, 6px);
     transition: all 0.15s ease-in-out;
     outline: none;
     width: 100%;
@@ -76,8 +81,8 @@ export function getInputStyles(): string {
  */
 export function getInputFocusStyles(): string {
   return `
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--xp-input-focus-border, #3b82f6);
+    box-shadow: 0 0 0 var(--xp-input-focus-ring-width, 3px) var(--xp-input-focus-ring, rgba(59, 130, 246, 0.1));
   `.trim();
 }
 
@@ -86,7 +91,7 @@ export function getInputFocusStyles(): string {
  */
 export function getInputErrorStyles(): string {
   return `
-    border-color: #ef4444;
+    border-color: var(--xp-input-error-border, #ef4444);
   `.trim();
 }
 
@@ -95,8 +100,8 @@ export function getInputErrorStyles(): string {
  */
 export function getErrorMessageStyles(): string {
   return `
-    font-size: 13px;
-    color: #ef4444;
+    font-size: var(--xp-error-font-size, 13px);
+    color: var(--xp-error-color, #ef4444);
     line-height: 1.4;
     min-height: 18px;
   `.trim();
@@ -107,14 +112,14 @@ export function getErrorMessageStyles(): string {
  */
 export function getSubmitButtonStyles(): string {
   return `
-    margin-top: 8px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: white;
-    background-color: #2563eb;
+    margin-top: var(--xp-submit-margin-top, 8px);
+    padding: var(--xp-submit-padding, 10px 20px);
+    font-size: var(--xp-submit-font-size, 14px);
+    font-weight: var(--xp-submit-font-weight, 500);
+    color: var(--xp-submit-color, white);
+    background-color: var(--xp-submit-bg, #2563eb);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--xp-submit-radius, 6px);
     cursor: pointer;
     transition: all 0.2s;
     width: 100%;
@@ -122,10 +127,10 @@ export function getSubmitButtonStyles(): string {
 }
 
 /**
- * Get CSS for submit button hover state
+ * Get CSS for submit button hover background
  */
-export function getSubmitButtonHoverColor(): string {
-  return '#1d4ed8';
+export function getSubmitButtonHoverBg(): string {
+  return 'var(--xp-submit-bg-hover, #1d4ed8)';
 }
 
 /**
@@ -133,7 +138,7 @@ export function getSubmitButtonHoverColor(): string {
  */
 export function getSubmitButtonDisabledStyles(): string {
   return `
-    opacity: 0.6;
+    opacity: var(--xp-submit-disabled-opacity, 0.6);
     cursor: not-allowed;
   `.trim();
 }
@@ -143,8 +148,8 @@ export function getSubmitButtonDisabledStyles(): string {
  */
 export function getFormStateStyles(): string {
   return `
-    padding: 16px;
-    border-radius: 8px;
+    padding: var(--xp-state-padding, 16px);
+    border-radius: var(--xp-state-radius, 8px);
     text-align: center;
   `.trim();
 }
@@ -154,8 +159,8 @@ export function getFormStateStyles(): string {
  */
 export function getSuccessStateStyles(): string {
   return `
-    background-color: #f0fdf4;
-    border: 1px solid #86efac;
+    background-color: var(--xp-success-bg, #f0fdf4);
+    border: var(--xp-state-border-width, 1px) solid var(--xp-success-border, #86efac);
   `.trim();
 }
 
@@ -164,8 +169,8 @@ export function getSuccessStateStyles(): string {
  */
 export function getErrorStateStyles(): string {
   return `
-    background-color: #fef2f2;
-    border: 1px solid #fca5a5;
+    background-color: var(--xp-error-bg, #fef2f2);
+    border: var(--xp-state-border-width, 1px) solid var(--xp-error-border, #fca5a5);
   `.trim();
 }
 
@@ -174,10 +179,10 @@ export function getErrorStateStyles(): string {
  */
 export function getStateTitleStyles(): string {
   return `
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 8px 0;
-    color: #111827;
+    font-size: var(--xp-state-title-font-size, 16px);
+    font-weight: var(--xp-state-title-font-weight, 600);
+    margin: 0 0 var(--xp-state-title-margin-bottom, 8px) 0;
+    color: var(--xp-state-title-color, #111827);
   `.trim();
 }
 
@@ -186,9 +191,9 @@ export function getStateTitleStyles(): string {
  */
 export function getStateMessageStyles(): string {
   return `
-    font-size: 14px;
+    font-size: var(--xp-state-message-font-size, 14px);
     line-height: 1.5;
-    color: #374151;
+    color: var(--xp-state-message-color, #374151);
     margin: 0;
   `.trim();
 }
@@ -198,9 +203,9 @@ export function getStateMessageStyles(): string {
  */
 export function getStateButtonsStyles(): string {
   return `
-    margin-top: 16px;
+    margin-top: var(--xp-state-buttons-margin-top, 16px);
     display: flex;
-    gap: 8px;
+    gap: var(--xp-state-buttons-gap, 8px);
     justify-content: center;
     flex-wrap: wrap;
   `.trim();
