@@ -1,0 +1,489 @@
+# Inline Plugin
+
+Embed experiences directly within page content using CSS selectors. Perfect for in-content promotions, contextual CTAs, and dynamic content replacement.
+
+## Features
+
+- **5 insertion methods** - `replace`, `append`, `prepend`, `before`, `after`
+- **Dismissal with persistence** - Remember dismissed experiences
+- **Multi-instance support** - Multiple inline experiences per page
+- **HTML sanitization** - XSS protection built-in
+- **Custom styling** - `className` and `style` props
+- **CSS Variables** - Full theming support
+
+## Basic Usage
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+experiences.register('promo-banner', {
+  type: 'inline',
+  content: {
+    selector: '#content-sidebar',
+    message: '<p><strong>Special Offer!</strong> Get 20% off with code SAVE20.</p>',
+    buttons: [
+      { text: 'Shop Now', variant: 'primary', url: '/shop' }
+    ]
+  }
+});
+```
+
+## Insertion Methods
+
+### Replace (Default)
+
+Replaces the target element's content:
+
+```typescript
+{
+  selector: '#announcement',
+  position: 'replace',  // or omit (default)
+  message: '<p>New content here</p>'
+}
+```
+
+**Before:**
+```html
+<div id="announcement">
+  <p>Old content</p>
+</div>
+```
+
+**After:**
+```html
+<div id="announcement">
+  <div class="xp-inline">
+    <p>New content here</p>
+  </div>
+</div>
+```
+
+### Append
+
+Adds content to the end of the target element:
+
+```typescript
+{
+  selector: '.article-content',
+  position: 'append',
+  message: '<p>Related: Check out our <a href="/guide">complete guide</a>.</p>'
+}
+```
+
+### Prepend
+
+Adds content to the beginning of the target element:
+
+```typescript
+{
+  selector: '.product-list',
+  position: 'prepend',
+  message: '<p>🔥 <strong>Trending:</strong> Most popular items this week.</p>'
+}
+```
+
+### Before
+
+Inserts content as a sibling before the target element:
+
+```typescript
+{
+  selector: '.checkout-button',
+  position: 'before',
+  message: '<p>✓ Free shipping on orders over $50</p>'
+}
+```
+
+### After
+
+Inserts content as a sibling after the target element:
+
+```typescript
+{
+  selector: '.blog-post',
+  position: 'after',
+  message: '<p>Enjoyed this article? <a href="/subscribe">Subscribe for more</a>.</p>'
+}
+```
+
+## Dismissal
+
+Allow users to close inline experiences:
+
+```typescript
+{
+  selector: '#sidebar',
+  message: '<p>Limited time offer!</p>',
+  dismissable: true,  // Show close button
+  persist: true  // Remember dismissal in localStorage
+}
+```
+
+When `persist: true`, the inline experience won't show again after dismissal (stored in `localStorage`).
+
+## Buttons
+
+Add interactive buttons to inline content:
+
+```typescript
+{
+  selector: '#product-details',
+  message: '<p>Want expert advice?</p>',
+  buttons: [
+    { 
+      text: 'Chat with Us', 
+      variant: 'primary',
+      action: 'chat',
+      dismiss: false  // Keep inline visible
+    },
+    { 
+      text: 'No Thanks', 
+      variant: 'link',
+      dismiss: true  // Close on click
+    }
+  ]
+}
+```
+
+## Custom Styling
+
+### Using className
+
+```typescript
+{
+  selector: '#hero',
+  message: '<p>Flash Sale!</p>',
+  className: 'sale-banner',
+  buttons: [...]
+}
+```
+
+```css
+/* Your CSS */
+.sale-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+```
+
+### Using Inline Styles
+
+```typescript
+{
+  selector: '#sidebar',
+  message: '<p>New feature!</p>',
+  style: {
+    background: '#f0f9ff',
+    border: '2px solid #0ea5e9',
+    padding: '16px',
+    borderRadius: '8px'
+  }
+}
+```
+
+## Events
+
+Listen to inline experience events:
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+// Inline shown
+experiences.on('experiences:shown', (event) => {
+  if (event.type === 'inline') {
+    console.log('Inline shown:', event.experienceId);
+    console.log('Selector:', event.selector);
+    console.log('Position:', event.position);
+  }
+});
+
+// Button clicked
+experiences.on('experiences:action', (event) => {
+  console.log('Button clicked:', event.action);
+  console.log('Button metadata:', event.metadata);
+});
+
+// Inline dismissed
+experiences.on('experiences:dismissed', (event) => {
+  console.log('Inline dismissed:', event.experienceId);
+});
+
+// Error (selector not found)
+experiences.on('experiences:inline:error', (event) => {
+  console.error('Selector not found:', event.selector);
+});
+```
+
+## API Methods
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+// Show an inline programmatically
+experiences.inline.show(experience);
+
+// Remove a specific inline
+experiences.inline.remove('promo-banner');
+
+// Check if any inline is showing
+experiences.inline.isShowing(); // true/false
+
+// Check if specific inline is showing
+experiences.inline.isShowing('promo-banner'); // true/false
+```
+
+## Error Handling
+
+If the target selector is not found, the plugin emits an error event:
+
+```typescript
+experiences.on('experiences:inline:error', (event) => {
+  console.error('Selector not found:', event.selector);
+  // event.experienceId, event.error ('selector-not-found')
+});
+```
+
+### Retry Logic
+
+Enable automatic retries for dynamic content:
+
+```typescript
+import { createInstance } from '@prosdevlab/experience-sdk';
+
+const experiences = createInstance({
+  inline: {
+    retry: true,  // Retry if selector not found
+    retryTimeout: 5000  // Retry for up to 5 seconds
+  }
+});
+```
+
+## CSS Variables
+
+Customize inline appearance:
+
+```css
+:root {
+  /* Close button */
+  --xp-inline-close-color: #666;
+  --xp-inline-close-hover-color: #111;
+  --xp-inline-close-size: 32px;
+  --xp-inline-close-bg: transparent;
+  --xp-inline-close-hover-bg: rgba(0, 0, 0, 0.1);
+  --xp-inline-close-border-radius: 4px;
+  
+  /* Buttons */
+  --xp-inline-button-padding: 8px 16px;
+  --xp-inline-button-font-size: 14px;
+  --xp-inline-button-border-radius: 4px;
+  --xp-inline-button-primary-bg: #2563eb;
+  --xp-inline-button-primary-color: #ffffff;
+  --xp-inline-button-secondary-bg: #f3f4f6;
+  --xp-inline-button-secondary-color: #374151;
+  --xp-inline-buttons-gap: 8px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --xp-inline-close-color: #9ca3af;
+    --xp-inline-close-hover-color: #f9fafb;
+    --xp-inline-button-primary-bg: #3b82f6;
+    --xp-inline-button-secondary-bg: #374151;
+    --xp-inline-button-secondary-color: #f9fafb;
+  }
+}
+```
+
+## HTML Sanitization
+
+All HTML content is automatically sanitized to prevent XSS attacks.
+
+**Allowed tags:**
+- `strong`, `em`, `b`, `i` - Text formatting
+- `a` - Links (with `href` validation)
+- `p`, `span`, `br` - Structure
+
+**Allowed attributes:**
+- `href` (links only, safe URLs)
+- `class`, `style`
+
+**Dangerous tags removed:**
+- `script`, `iframe`, `object`, `embed`
+- `style` tags (use `style` prop instead)
+- Event handlers (`onclick`, `onerror`, etc.)
+
+```typescript
+// Input
+{
+  message: '<p>Safe content</p><script>alert("xss")</script>'
+}
+
+// Output (script removed)
+<p>Safe content</p>
+```
+
+## Examples
+
+### In-Content CTA
+
+```typescript
+experiences.register('article-cta', {
+  type: 'inline',
+  content: {
+    selector: '.article-content',
+    position: 'after',
+    message: '<p>Want to learn more? Download our free guide.</p>',
+    buttons: [
+      { text: 'Download Guide', variant: 'primary', url: '/guide.pdf' }
+    ],
+    className: 'article-cta',
+    dismissable: true,
+    persist: true
+  },
+  targeting: {
+    url: { contains: '/blog/' }
+  }
+});
+```
+
+### Product Recommendation
+
+```typescript
+experiences.register('related-product', {
+  type: 'inline',
+  content: {
+    selector: '.product-sidebar',
+    position: 'prepend',
+    message: `
+      <p><strong>You might also like:</strong></p>
+      <p>Premium Wireless Headphones - <em>20% off</em></p>
+    `,
+    buttons: [
+      { text: 'View Deal', variant: 'primary', url: '/products/headphones' },
+      { text: 'Dismiss', variant: 'link', dismiss: true }
+    ],
+    style: {
+      background: '#fef3c7',
+      padding: '16px',
+      borderRadius: '8px',
+      marginBottom: '16px'
+    }
+  }
+});
+```
+
+### Survey Prompt
+
+```typescript
+experiences.register('feedback-survey', {
+  type: 'inline',
+  content: {
+    selector: '#main-content',
+    position: 'after',
+    message: '<p>How was your experience today?</p>',
+    buttons: [
+      { text: '😊 Great', variant: 'primary', action: 'positive' },
+      { text: '😐 Okay', variant: 'secondary', action: 'neutral' },
+      { text: '😞 Poor', variant: 'secondary', action: 'negative' }
+    ],
+    dismissable: true,
+    persist: true
+  },
+  targeting: {
+    custom: (context) => context.pageVisits.sessionCount === 3
+  }
+});
+```
+
+### Exit Intent Offer
+
+```typescript
+experiences.register('exit-offer', {
+  type: 'inline',
+  content: {
+    selector: 'header',
+    position: 'after',
+    message: '<p>🎁 <strong>Wait!</strong> Get 15% off before you go.</p>',
+    buttons: [
+      { text: 'Claim Discount', variant: 'primary', url: '/checkout?code=EXIT15' },
+      { text: 'No Thanks', variant: 'link', dismiss: true }
+    ],
+    style: {
+      background: '#dc2626',
+      color: 'white',
+      padding: '12px 20px',
+      textAlign: 'center'
+    }
+  },
+  targeting: {
+    custom: (context) => context.triggers.exitIntent
+  }
+});
+```
+
+### Dynamic Content Replacement
+
+```typescript
+experiences.register('featured-promo', {
+  type: 'inline',
+  content: {
+    selector: '#hero-banner',
+    position: 'replace',
+    message: `
+      <div style="text-align: center; padding: 40px;">
+        <h2>🎉 Black Friday Sale</h2>
+        <p>Up to 70% off everything. Today only!</p>
+      </div>
+    `,
+    buttons: [
+      { text: 'Shop Now', variant: 'primary', url: '/sale' }
+    ]
+  },
+  targeting: {
+    url: { equals: '/' }
+  }
+});
+```
+
+## Use Cases
+
+- **Content upgrades** - Offer downloads within blog posts
+- **Related products** - Cross-sell in product pages
+- **Survey prompts** - Contextual feedback requests
+- **Announcements** - Temporary notifications in key areas
+- **CTAs** - Strategic calls-to-action in content
+- **Promotions** - Time-sensitive offers
+- **Onboarding tips** - Contextual help for new users
+
+## Best Practices
+
+1. **Use semantic selectors** - IDs and classes are more reliable than tag names
+2. **Test responsiveness** - Ensure inline content works on mobile
+3. **Limit frequency** - Use the frequency plugin to avoid overwhelming users
+4. **Provide value** - Make inline content relevant to the page context
+5. **Allow dismissal** - Let users close promotional content
+6. **Monitor errors** - Listen to `experiences:inline:error` events
+
+## Accessibility
+
+- **Semantic HTML** - Use proper tags in your message content
+- **Close button** - Labeled with `aria-label="Close"`
+- **Keyboard support** - Close button is keyboard accessible
+- **Screen readers** - Content is announced naturally
+
+## Browser Support
+
+- Chrome, Firefox, Safari, Edge (last 2 versions)
+- Mobile: iOS Safari, Chrome Android
+- Requires ES2024+ support (or transpilation)
+
+## Next Steps
+
+- [Modal Plugin](/reference/plugins/modal) - Overlay dialogs
+- [Banner Plugin](/reference/plugins/banner) - Top/bottom bars
+- [Display Conditions](/reference/plugins/exit-intent) - Trigger rules
+- [Events Reference](/reference/events) - Full event documentation
+

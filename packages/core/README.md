@@ -2,17 +2,20 @@
 
 A lightweight, explainable client-side experience runtime built on [@lytics/sdk-kit](https://github.com/lytics/sdk-kit).
 
-**Size:** 6.9 KB gzipped (includes core + 3 plugins)
+**Size:** 13.4 KB gzipped core + 12.7 KB gzipped plugins = 26.1 KB total
 
 ## Features
 
 - **Explainability-First** - Every decision includes structured reasons
 - **Plugin-Based** - Built on sdk-kit's powerful plugin system
-- **Multiple Buttons** - Primary, secondary, and link variants
-- **Frequency Capping** - Control impression limits per session/day/week
+- **Multiple Layouts** - Banners, modals, and inline experiences
+- **Form Support** - Email capture with built-in validation
+- **Display Conditions** - Exit intent, scroll depth, time delays, page visits
+- **Frequency Capping** - Control impression limits per session/lifetime
 - **Responsive Layout** - Automatically adapts to mobile/desktop
 - **Script Tag Ready** - Works without build tools
 - **Type-Safe** - Full TypeScript support
+- **CSS Variables** - Full theming support
 
 ## Installation
 
@@ -41,18 +44,41 @@ const experiences = createInstance({ debug: true });
 // Initialize
 await experiences.init();
 
-// Register a banner
+// Register a modal with form
+experiences.register('newsletter', {
+  type: 'modal',
+  targeting: {
+    custom: (context) => context.triggers.exitIntent
+  },
+  content: {
+    title: 'Before You Go!',
+    message: 'Subscribe for 10% off your first order.',
+    size: 'sm',
+    form: {
+      fields: [
+        { name: 'email', type: 'email', required: true, placeholder: 'you@example.com' }
+      ],
+      submitButton: { text: 'Get Discount', variant: 'primary' },
+      successState: { 
+        title: '✓ Check Your Inbox',
+        message: 'Your discount code is on the way!'
+      }
+    }
+  }
+});
+
+// Or register a banner
 experiences.register('welcome', {
   type: 'banner',
   targeting: {
     url: { contains: '/' }
   },
   content: {
-    title: 'Welcome!',
-    message: 'Thanks for visiting.',
+    message: 'Welcome! Get 20% off today.',
     buttons: [
-      { text: 'Get Started', url: '/start', variant: 'primary' }
-    ]
+      { text: 'Shop Now', url: '/shop', variant: 'primary' }
+    ],
+    position: 'top'
   },
   frequency: {
     max: 3,
@@ -128,9 +154,20 @@ experiences.on('experiences:dismissed', ({ experienceId }) => {
 
 ## Included Plugins
 
-This package includes three official plugins:
+This package auto-registers the following official plugins:
 
-- **Banner Plugin** - DOM rendering with responsive layout
+### Layout Plugins
+- **Banner Plugin** - Top/bottom notification bars
+- **Modal Plugin** - Overlay dialogs with forms
+- **Inline Plugin** - In-content experiences
+
+### Display Conditions
+- **Exit Intent** - Detect when users are leaving
+- **Scroll Depth** - Track scroll engagement
+- **Page Visits** - Session and lifetime counters
+- **Time Delay** - Show after time elapsed
+
+### Utility Plugins
 - **Frequency Plugin** - Impression tracking and capping
 - **Debug Plugin** - Logging and window events
 

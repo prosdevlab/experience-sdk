@@ -1,6 +1,8 @@
 {
   "index": "Overview",
   "banner": "Banner",
+  "modal": "Modal",
+  "inline": "Inline",
   "frequency": "Frequency",
   "debug": "Debug",
   "exit-intent": "Exit Intent",

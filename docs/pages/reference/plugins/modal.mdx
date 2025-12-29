@@ -1,0 +1,453 @@
+# Modal Plugin
+
+Display experiences in overlay dialogs with backdrop, focus management, and rich content.
+
+## Features
+
+- **Multiple sizes** - `sm`, `md`, `lg`, `fullscreen`, or `auto`
+- **Mobile-optimized** - Automatic fullscreen on mobile for `lg` size
+- **Hero images** - Add visual impact with top images
+- **Animations** - `fade`, `slide-up`, or none
+- **Positioning** - `center` or `bottom` placement
+- **Form support** - Built-in email capture with validation
+- **Accessibility** - Focus trap, ARIA attributes, keyboard support (Escape)
+- **Dismissal** - Configurable close button and backdrop dismiss
+- **CSS Variables** - Full theming support
+
+## Basic Usage
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+experiences.register('welcome-modal', {
+  type: 'modal',
+  content: {
+    title: 'Welcome!',
+    message: 'Get 20% off your first purchase.',
+    buttons: [
+      { text: 'Shop Now', variant: 'primary', url: '/shop' },
+      { text: 'Maybe Later', variant: 'secondary', dismiss: true }
+    ]
+  }
+});
+```
+
+## Content Options
+
+### Basic Modal
+
+```typescript
+{
+  type: 'modal',
+  content: {
+    // Text content
+    title: 'Flash Sale!',
+    message: 'Limited time offer - <strong>50% off</strong> everything.',
+    
+    // Buttons
+    buttons: [
+      { 
+        text: 'Shop Now', 
+        variant: 'primary',
+        url: '/shop',
+        dismiss: true  // Close modal on click
+      },
+      { 
+        text: 'Dismiss', 
+        variant: 'link',
+        dismiss: true
+      }
+    ],
+    
+    // Size and behavior
+    size: 'md',  // sm | md | lg | fullscreen | auto
+    position: 'center',  // center | bottom
+    animation: 'fade',  // fade | slide-up | none
+    dismissable: true,  // Show close button
+    backdropDismiss: true,  // Click backdrop to close
+    
+    // Hero image (optional)
+    image: {
+      src: '/images/hero.jpg',
+      alt: 'Flash Sale',
+      maxHeight: 300
+    },
+    
+    // Custom styling
+    className: 'custom-modal',
+    style: { borderRadius: '16px' }
+  }
+}
+```
+
+### Modal with Form
+
+Capture emails, phone numbers, or custom data with built-in validation.
+
+```typescript
+{
+  type: 'modal',
+  content: {
+    title: 'Stay Updated',
+    message: 'Subscribe to our newsletter for exclusive offers.',
+    
+    form: {
+      fields: [
+        {
+          name: 'email',
+          label: 'Email Address',
+          type: 'email',
+          placeholder: 'you@example.com',
+          required: true,
+          errorMessage: 'Please enter a valid email'
+        }
+      ],
+      
+      submitButton: {
+        text: 'Subscribe',
+        variant: 'primary',
+        loadingText: 'Subscribing...'
+      },
+      
+      // Optional: Custom validation
+      validate: (data) => {
+        if (data.email.includes('test')) {
+          return { 
+            valid: false, 
+            errors: { email: 'Test emails not allowed' }
+          };
+        }
+        return { valid: true };
+      },
+      
+      // Success state
+      successState: {
+        title: '✓ Subscribed!',
+        message: 'Check your inbox for a confirmation email.',
+        buttons: [
+          { text: 'Continue', variant: 'primary', dismiss: true }
+        ]
+      },
+      
+      // Error state
+      errorState: {
+        title: '✗ Something went wrong',
+        message: 'Please try again later.',
+        buttons: [
+          { text: 'Try Again', variant: 'primary', action: 'reset' },
+          { text: 'Cancel', variant: 'secondary', dismiss: true }
+        ]
+      }
+    }
+  }
+}
+```
+
+## Form Field Types
+
+```typescript
+{
+  fields: [
+    { name: 'email', type: 'email', required: true },
+    { name: 'name', type: 'text', placeholder: 'Your name' },
+    { name: 'phone', type: 'tel', pattern: '^[0-9]{10}$' },
+    { name: 'website', type: 'url' },
+    { name: 'age', type: 'number' },
+    { 
+      name: 'comments', 
+      type: 'textarea',
+      placeholder: 'Tell us more...'
+    }
+  ]
+}
+```
+
+## Size Variants
+
+```typescript
+// Small modal (max-width: 400px)
+{ size: 'sm' }
+
+// Medium modal (max-width: 600px) - Default
+{ size: 'md' }
+
+// Large modal (max-width: 800px)
+{ size: 'lg' }
+
+// Full viewport (100vw x 100vh)
+{ size: 'fullscreen' }
+
+// Auto-size based on content
+{ size: 'auto' }
+```
+
+**Mobile behavior:** `lg` size automatically becomes fullscreen on mobile (`< 768px`).
+
+## Animations
+
+```typescript
+// Fade in (default)
+{ animation: 'fade' }
+
+// Slide up from bottom
+{ animation: 'slide-up' }
+
+// No animation
+{ animation: 'none' }
+```
+
+## Hero Images
+
+Add visual impact to modals:
+
+```typescript
+{
+  image: {
+    src: '/promo-banner.jpg',
+    alt: 'Summer Sale',
+    maxHeight: 250  // Max height in pixels
+  }
+}
+```
+
+## Events
+
+Listen to modal lifecycle events:
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+// Modal shown
+experiences.on('experiences:shown', (event) => {
+  if (event.type === 'modal') {
+    console.log('Modal shown:', event.experienceId);
+  }
+});
+
+// Button clicked
+experiences.on('experiences:action', (event) => {
+  console.log('Button clicked:', event.action, event.text);
+});
+
+// Modal dismissed
+experiences.on('experiences:dismissed', (event) => {
+  console.log('Modal dismissed:', event.experienceId);
+});
+
+// Form events
+experiences.on('experiences:modal:form:change', (event) => {
+  console.log('Form field changed:', event.field, event.value);
+});
+
+experiences.on('experiences:modal:form:validation', (event) => {
+  if (!event.valid) {
+    console.log('Validation errors:', event.errors);
+  }
+});
+
+experiences.on('experiences:modal:form:submit', (event) => {
+  console.log('Form submitted:', event.data);
+  
+  // Submit to your backend
+  fetch('/api/subscribe', {
+    method: 'POST',
+    body: JSON.stringify(event.data)
+  })
+    .then(() => {
+      // Show success state
+      experiences.modal.showFormState(event.experienceId, 'success');
+    })
+    .catch(() => {
+      // Show error state
+      experiences.modal.showFormState(event.experienceId, 'error');
+    });
+});
+```
+
+## API Methods
+
+```typescript
+import { experiences } from '@prosdevlab/experience-sdk';
+
+// Show a modal programmatically
+experiences.modal.show(experience);
+
+// Hide a specific modal
+experiences.modal.hide('welcome-modal');
+
+// Hide all modals
+experiences.modal.hideAll();
+
+// Check if any modal is showing
+experiences.modal.isShowing(); // true/false
+
+// Check if specific modal is showing
+experiences.modal.isShowing('welcome-modal'); // true/false
+
+// Form methods
+experiences.modal.showFormState('newsletter', 'success');
+experiences.modal.resetForm('newsletter');
+const formData = experiences.modal.getFormData('newsletter');
+```
+
+## CSS Variables
+
+Customize modal appearance:
+
+```css
+:root {
+  /* Modal container */
+  --xp-modal-z-index: 10001;
+  
+  /* Backdrop */
+  --xp-modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+  
+  /* Dialog */
+  --xp-modal-dialog-bg: #ffffff;
+  --xp-modal-dialog-border-radius: 8px;
+  --xp-modal-dialog-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --xp-modal-dialog-padding: 24px;
+  
+  /* Close button */
+  --xp-modal-close-color: #666;
+  --xp-modal-close-hover-color: #111;
+  
+  /* Title */
+  --xp-modal-title-font-size: 20px;
+  --xp-modal-title-font-weight: 600;
+  --xp-modal-title-color: #111;
+  
+  /* Message */
+  --xp-modal-message-font-size: 14px;
+  --xp-modal-message-color: #444;
+  
+  /* Buttons */
+  --xp-modal-button-primary-bg: #2563eb;
+  --xp-modal-button-primary-color: #ffffff;
+  --xp-modal-button-secondary-bg: #f3f4f6;
+  --xp-modal-button-secondary-color: #374151;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --xp-modal-dialog-bg: #1f2937;
+    --xp-modal-title-color: #f9fafb;
+    --xp-modal-message-color: #d1d5db;
+  }
+}
+```
+
+## Examples
+
+### Email Signup Modal
+
+```typescript
+experiences.register('newsletter', {
+  type: 'modal',
+  content: {
+    title: 'Join Our Newsletter',
+    message: 'Get 10% off your first order.',
+    size: 'sm',
+    animation: 'slide-up',
+    
+    form: {
+      fields: [
+        {
+          name: 'email',
+          type: 'email',
+          placeholder: 'you@example.com',
+          required: true
+        }
+      ],
+      submitButton: {
+        text: 'Get Discount',
+        variant: 'primary'
+      },
+      successState: {
+        title: '✓ Check Your Inbox',
+        message: 'Your discount code is on its way!'
+      }
+    }
+  },
+  targeting: {
+    custom: (context) => context.triggers.exitIntent
+  }
+});
+```
+
+### Product Launch Modal
+
+```typescript
+experiences.register('product-launch', {
+  type: 'modal',
+  content: {
+    title: 'Introducing Pro Plan',
+    message: 'Advanced features for power users.',
+    size: 'lg',
+    
+    image: {
+      src: '/product-hero.jpg',
+      alt: 'Pro Plan',
+      maxHeight: 300
+    },
+    
+    buttons: [
+      { text: 'Learn More', variant: 'primary', url: '/pro' },
+      { text: 'Remind Me Later', variant: 'link', dismiss: true }
+    ]
+  }
+});
+```
+
+### Cookie Consent Modal
+
+```typescript
+experiences.register('cookie-consent', {
+  type: 'modal',
+  content: {
+    title: 'Cookie Settings',
+    message: 'We use cookies to improve your experience.',
+    size: 'md',
+    position: 'bottom',
+    dismissable: false,  // Require user action
+    backdropDismiss: false,
+    
+    buttons: [
+      { 
+        text: 'Accept All', 
+        variant: 'primary',
+        action: 'accept',
+        dismiss: true
+      },
+      { 
+        text: 'Customize', 
+        variant: 'secondary',
+        url: '/cookies'
+      }
+    ]
+  }
+});
+```
+
+## Accessibility
+
+The modal plugin follows WAI-ARIA best practices:
+
+- **Focus management** - Traps focus within modal, restores on close
+- **Keyboard support** - Escape key closes modal (if dismissable)
+- **ARIA attributes** - `role="dialog"`, `aria-modal="true"`, `aria-labelledby`
+- **Screen readers** - Proper labeling and announcements
+
+## Browser Support
+
+- Chrome, Firefox, Safari, Edge (last 2 versions)
+- Mobile: iOS Safari, Chrome Android
+- Requires ES2024+ support (or transpilation)
+
+## Next Steps
+
+- [Exit Intent Plugin](/reference/plugins/exit-intent) - Trigger modals on exit
+- [Frequency Plugin](/reference/plugins/frequency) - Cap modal impressions
+- [Events Reference](/reference/events) - Full event documentation
+
