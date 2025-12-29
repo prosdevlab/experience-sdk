@@ -1,0 +1,528 @@
+# CSS Theming
+
+The Experience SDK uses CSS custom properties (variables) for comprehensive theming. All layout plugins (Banner, Modal, Inline) support full visual customization without overriding styles.
+
+## Quick Start
+
+Override CSS variables in your stylesheet:
+
+```css
+:root {
+  /* Brand colors */
+  --xp-modal-button-primary-bg: #8b5cf6;  /* Purple */
+  --xp-banner-bg: #1f2937;  /* Dark gray */
+  --xp-inline-button-primary-bg: #0ea5e9;  /* Sky blue */
+}
+```
+
+All changes apply automatically to all experiences.
+
+## Banner Variables
+
+### Container & Layout
+
+```css
+:root {
+  --xp-banner-z-index: 10000;
+  --xp-banner-padding: 16px 20px;
+  --xp-banner-gap: 16px;  /* Space between elements */
+}
+```
+
+### Colors & Backgrounds
+
+```css
+:root {
+  /* Background */
+  --xp-banner-bg: #ffffff;
+  --xp-banner-border: 1px solid #e5e7eb;
+  --xp-banner-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  /* Text */
+  --xp-banner-title-color: #111827;
+  --xp-banner-message-color: #374151;
+  
+  /* Close button */
+  --xp-banner-close-color: #6b7280;
+  --xp-banner-close-hover-color: #111827;
+}
+```
+
+### Typography
+
+```css
+:root {
+  --xp-banner-title-font-size: 16px;
+  --xp-banner-title-font-weight: 600;
+  --xp-banner-title-margin-bottom: 4px;
+  
+  --xp-banner-message-font-size: 14px;
+  --xp-banner-message-line-height: 1.5;
+}
+```
+
+### Buttons
+
+```css
+:root {
+  /* Primary button */
+  --xp-banner-button-primary-bg: #2563eb;
+  --xp-banner-button-primary-color: #ffffff;
+  --xp-banner-button-primary-hover-bg: #1d4ed8;
+  
+  /* Secondary button */
+  --xp-banner-button-secondary-bg: #f3f4f6;
+  --xp-banner-button-secondary-color: #374151;
+  --xp-banner-button-secondary-hover-bg: #e5e7eb;
+  --xp-banner-button-secondary-border: 1px solid #e5e7eb;
+  
+  /* Link button */
+  --xp-banner-button-link-color: #2563eb;
+  --xp-banner-button-link-hover-bg: #f3f4f6;
+  
+  /* Size */
+  --xp-banner-button-padding: 8px 16px;
+  --xp-banner-button-font-size: 14px;
+  --xp-banner-button-font-weight: 500;
+  --xp-banner-button-border-radius: 6px;
+  --xp-banner-buttons-gap: 8px;
+}
+```
+
+## Modal Variables
+
+### Container & Backdrop
+
+```css
+:root {
+  --xp-modal-z-index: 10001;
+  --xp-modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+}
+```
+
+### Dialog
+
+```css
+:root {
+  --xp-modal-dialog-bg: #ffffff;
+  --xp-modal-dialog-border-radius: 8px;
+  --xp-modal-dialog-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --xp-modal-dialog-padding: 24px;
+}
+```
+
+### Content
+
+```css
+:root {
+  /* Title */
+  --xp-modal-title-font-size: 20px;
+  --xp-modal-title-font-weight: 600;
+  --xp-modal-title-color: #111;
+  --xp-modal-title-margin-bottom: 16px;
+  
+  /* Message */
+  --xp-modal-message-font-size: 14px;
+  --xp-modal-message-line-height: 1.5;
+  --xp-modal-message-color: #444;
+  --xp-modal-message-margin-bottom: 20px;
+  
+  /* Close button */
+  --xp-modal-close-color: #666;
+  --xp-modal-close-hover-color: #111;
+}
+```
+
+### Buttons
+
+```css
+:root {
+  /* Primary button */
+  --xp-modal-button-primary-bg: #2563eb;
+  --xp-modal-button-primary-color: #ffffff;
+  --xp-modal-button-primary-hover-bg: #1d4ed8;
+  
+  /* Secondary button */
+  --xp-modal-button-secondary-bg: #f3f4f6;
+  --xp-modal-button-secondary-color: #374151;
+  --xp-modal-button-secondary-hover-bg: #e5e7eb;
+  --xp-modal-button-secondary-border-color: #e5e7eb;
+  
+  /* Link button */
+  --xp-modal-button-link-color: #2563eb;
+  --xp-modal-button-link-hover-bg: #f3f4f6;
+  
+  /* Size */
+  --xp-modal-button-padding: 10px 20px;
+  --xp-modal-button-font-size: 14px;
+  --xp-modal-button-font-weight: 500;
+  --xp-modal-button-border-radius: 6px;
+  --xp-modal-buttons-gap: 8px;
+}
+```
+
+### Forms
+
+```css
+:root {
+  /* Form container */
+  --xp-form-gap: 16px;
+  --xp-form-field-gap: 8px;
+  
+  /* Label */
+  --xp-form-label-font-size: 14px;
+  --xp-form-label-font-weight: 500;
+  --xp-form-label-color: #1f2937;
+  --xp-form-required-color: #ef4444;
+  
+  /* Input fields */
+  --xp-input-bg: #ffffff;
+  --xp-input-border-color: #d1d5db;
+  --xp-input-border-radius: 6px;
+  --xp-input-padding: 10px 12px;
+  --xp-input-font-size: 14px;
+  --xp-input-color: #1f2937;
+  --xp-input-placeholder-color: #6b7280;
+  
+  /* Focus state */
+  --xp-input-focus-border-color: #2563eb;
+  --xp-input-focus-ring-color: rgba(59, 130, 246, 0.25);
+  
+  /* Error state */
+  --xp-input-error-border-color: #ef4444;
+  --xp-input-error-focus-border-color: #dc2626;
+  --xp-input-error-focus-ring-color: rgba(239, 68, 68, 0.25);
+  --xp-error-message-color: #ef4444;
+  --xp-error-message-font-size: 12px;
+  
+  /* Submit button */
+  --xp-submit-button-bg-primary: #2563eb;
+  --xp-submit-button-color-primary: #ffffff;
+  --xp-submit-button-hover-bg-primary: #1d4ed8;
+  --xp-submit-button-loading-bg: #e5e7eb;
+  --xp-submit-button-loading-color: #6b7280;
+  
+  /* Success/error states */
+  --xp-form-state-success-bg: #ecfdf5;
+  --xp-form-state-success-border: 1px solid #a7f3d0;
+  --xp-form-state-success-color: #065f46;
+  
+  --xp-form-state-error-bg: #fef2f2;
+  --xp-form-state-error-border: 1px solid #fca5a5;
+  --xp-form-state-error-color: #991b1b;
+}
+```
+
+## Inline Variables
+
+### Close Button
+
+```css
+:root {
+  --xp-inline-close-color: #666;
+  --xp-inline-close-hover-color: #111;
+  --xp-inline-close-size: 32px;
+  --xp-inline-close-bg: transparent;
+  --xp-inline-close-hover-bg: rgba(0, 0, 0, 0.1);
+  --xp-inline-close-border-radius: 4px;
+}
+```
+
+### Buttons
+
+```css
+:root {
+  /* Primary button */
+  --xp-inline-button-primary-bg: #2563eb;
+  --xp-inline-button-primary-color: #ffffff;
+  --xp-inline-button-primary-hover-bg: #1d4ed8;
+  
+  /* Secondary button */
+  --xp-inline-button-secondary-bg: #f3f4f6;
+  --xp-inline-button-secondary-color: #374151;
+  --xp-inline-button-secondary-hover-bg: #e5e7eb;
+  --xp-inline-button-secondary-border-color: #e5e7eb;
+  
+  /* Link button */
+  --xp-inline-button-link-color: #2563eb;
+  --xp-inline-button-link-hover-bg: #f3f4f6;
+  
+  /* Size */
+  --xp-inline-button-padding: 8px 16px;
+  --xp-inline-button-font-size: 14px;
+  --xp-inline-button-font-weight: 500;
+  --xp-inline-button-border-radius: 4px;
+  --xp-inline-buttons-gap: 8px;
+}
+```
+
+## Dark Mode
+
+All plugins include automatic dark mode support using `prefers-color-scheme`:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Banner */
+    --xp-banner-bg: #1f2937;
+    --xp-banner-title-color: #f9fafb;
+    --xp-banner-message-color: #d1d5db;
+    
+    /* Modal */
+    --xp-modal-backdrop-bg: rgba(0, 0, 0, 0.7);
+    --xp-modal-dialog-bg: #1f2937;
+    --xp-modal-title-color: #f9fafb;
+    --xp-modal-message-color: #d1d5db;
+    
+    /* Forms */
+    --xp-input-bg: #1f2937;
+    --xp-input-border-color: #374151;
+    --xp-input-color: #f9fafb;
+    
+    /* Buttons */
+    --xp-modal-button-primary-bg: #3b82f6;
+    --xp-modal-button-secondary-bg: #374151;
+    --xp-modal-button-secondary-color: #f9fafb;
+  }
+}
+```
+
+## Complete Examples
+
+### Brand Colors
+
+```css
+:root {
+  /* Apply your brand colors across all experiences */
+  --xp-banner-button-primary-bg: #8b5cf6;  /* Purple */
+  --xp-modal-button-primary-bg: #8b5cf6;
+  --xp-inline-button-primary-bg: #8b5cf6;
+  
+  --xp-banner-button-primary-hover-bg: #7c3aed;
+  --xp-modal-button-primary-hover-bg: #7c3aed;
+  --xp-inline-button-primary-hover-bg: #7c3aed;
+}
+```
+
+### E-Commerce Theme
+
+```css
+:root {
+  /* High-contrast, conversion-focused */
+  --xp-banner-bg: #000000;
+  --xp-banner-title-color: #ffffff;
+  --xp-banner-message-color: #d1d5db;
+  
+  --xp-banner-button-primary-bg: #ef4444;  /* Red CTA */
+  --xp-banner-button-primary-color: #ffffff;
+  --xp-banner-button-primary-hover-bg: #dc2626;
+  
+  --xp-banner-button-secondary-bg: transparent;
+  --xp-banner-button-secondary-color: #ffffff;
+  --xp-banner-button-secondary-border: 1px solid #ffffff;
+  --xp-banner-button-secondary-hover-bg: rgba(255, 255, 255, 0.1);
+}
+```
+
+### SaaS Theme
+
+```css
+:root {
+  /* Clean, professional */
+  --xp-modal-dialog-border-radius: 12px;
+  --xp-modal-dialog-padding: 32px;
+  --xp-modal-dialog-box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  --xp-modal-button-primary-bg: #0ea5e9;  /* Sky blue */
+  --xp-modal-button-primary-hover-bg: #0284c7;
+  --xp-modal-button-border-radius: 8px;
+  
+  --xp-input-border-radius: 8px;
+  --xp-input-padding: 12px 16px;
+  --xp-input-focus-border-color: #0ea5e9;
+  --xp-input-focus-ring-color: rgba(14, 165, 233, 0.25);
+}
+```
+
+### Minimalist Theme
+
+```css
+:root {
+  /* Subtle, understated */
+  --xp-banner-bg: #fafafa;
+  --xp-banner-border: none;
+  --xp-banner-shadow: none;
+  --xp-banner-padding: 12px 16px;
+  
+  --xp-banner-title-font-size: 14px;
+  --xp-banner-message-font-size: 13px;
+  
+  --xp-banner-button-primary-bg: #171717;
+  --xp-banner-button-primary-color: #ffffff;
+  --xp-banner-button-secondary-bg: transparent;
+  --xp-banner-button-secondary-color: #171717;
+  --xp-banner-button-border-radius: 4px;
+}
+```
+
+## Per-Experience Customization
+
+For experience-specific styling, use `className` or `style` props:
+
+### Using className
+
+```typescript
+experiences.register('sale', {
+  type: 'modal',
+  content: {
+    title: 'Flash Sale!',
+    message: '24 hours only.',
+    className: 'sale-modal',  // Custom class
+    buttons: [...]
+  }
+});
+```
+
+```css
+/* Your CSS */
+.sale-modal {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.sale-modal .xp-modal__title {
+  font-size: 32px;
+  text-transform: uppercase;
+}
+```
+
+### Using Inline Styles
+
+```typescript
+{
+  content: {
+    message: 'Limited offer',
+    style: {
+      background: '#fef3c7',
+      border: '2px solid #f59e0b',
+      borderRadius: '12px'
+    }
+  }
+}
+```
+
+## CSS Class Reference
+
+### Banner
+
+- `.xp-banner` - Container
+- `.xp-banner__close` - Close button
+- `.xp-banner__title` - Title text
+- `.xp-banner__message` - Message text
+- `.xp-banner__buttons` - Button container
+- `.xp-banner__button` - Individual button
+- `.xp-banner__button--primary` - Primary variant
+- `.xp-banner__button--secondary` - Secondary variant
+- `.xp-banner__button--link` - Link variant
+
+### Modal
+
+- `.xp-modal` - Container
+- `.xp-modal__backdrop` - Backdrop overlay
+- `.xp-modal__dialog` - Dialog box
+- `.xp-modal__close` - Close button
+- `.xp-modal__hero-image` - Hero image (if present)
+- `.xp-modal__content` - Content wrapper
+- `.xp-modal__title` - Title text
+- `.xp-modal__message` - Message text
+- `.xp-modal__buttons` - Button container
+- `.xp-modal__button` - Individual button
+- `.xp-modal__form` - Form container
+- `.xp-form__field` - Form field wrapper
+- `.xp-form__label` - Field label
+- `.xp-form__input` - Input field
+- `.xp-form__error` - Error message
+- `.xp-form__submit` - Submit button
+
+### Inline
+
+- `.xp-inline` - Container
+- `.xp-inline__close` - Close button
+- `.xp-inline__buttons` - Button container
+- `.xp-inline__button` - Individual button
+
+## Integration with Frameworks
+
+### Tailwind CSS
+
+```typescript
+{
+  content: {
+    message: 'Flash Sale!',
+    className: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-2xl',
+    buttons: [{
+      text: 'Shop Now',
+      className: 'bg-white text-purple-600 hover:bg-gray-100 font-bold'
+    }]
+  }
+}
+```
+
+### CSS Modules
+
+```typescript
+import styles from './experiences.module.css';
+
+{
+  content: {
+    message: 'Special offer',
+    className: styles.promo,
+    buttons: [{
+      text: 'Learn More',
+      className: styles.button
+    }]
+  }
+}
+```
+
+### Styled Components
+
+```typescript
+import { createGlobalStyle } from 'styled-components';
+
+const GlobalStyles = createGlobalStyle`
+  :root {
+    --xp-modal-button-primary-bg: ${props => props.theme.colors.primary};
+    --xp-banner-bg: ${props => props.theme.colors.surface};
+  }
+`;
+```
+
+## Best Practices
+
+1. **Define once, apply everywhere** - Set global CSS variables for consistent branding
+2. **Use semantic naming** - CSS variables describe purpose, not appearance
+3. **Support dark mode** - Include `prefers-color-scheme` overrides
+4. **Test responsively** - Some variables affect mobile differently
+5. **Progressive enhancement** - Styles gracefully degrade if variables unsupported
+6. **Avoid `!important`** - CSS variables have high specificity already
+
+## Browser Support
+
+CSS custom properties are supported in:
+- Chrome 49+
+- Firefox 31+
+- Safari 9.1+
+- Edge 15+
+- iOS Safari 9.3+
+- Chrome Android 49+
+
+For older browsers, fallback values are automatically applied.
+
+## Next Steps
+
+- [Banner Plugin](/reference/plugins/banner) - Banner-specific examples
+- [Modal Plugin](/reference/plugins/modal) - Modal-specific examples
+- [Inline Plugin](/reference/plugins/inline) - Inline-specific examples
+- [Events](/reference/events) - Listen to experience events
+
