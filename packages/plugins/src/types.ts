@@ -3,9 +3,11 @@
  * These types are re-exported by core for user convenience
  */
 
-// Import modal content type from modal plugin
+import type { InlineContent as _InlineContent } from './inline/types';
+// Import modal and inline content types from their plugins
 import type { ModalContent as _ModalContent } from './modal/types';
 export type ModalContent = _ModalContent;
+export type InlineContent = _InlineContent;
 
 /**
  * Experience button configuration (used across all experience types)
@@ -45,7 +47,7 @@ export interface TooltipContent {
 /**
  * Experience content - varies by type
  */
-export type ExperienceContent = BannerContent | ModalContent | TooltipContent;
+export type ExperienceContent = BannerContent | ModalContent | InlineContent | TooltipContent;
 
 /**
  * Experience definition

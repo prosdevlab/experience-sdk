@@ -5,6 +5,7 @@ import {
   debugPlugin,
   exitIntentPlugin,
   frequencyPlugin,
+  inlinePlugin,
   modalPlugin,
   pageVisitsPlugin,
   scrollDepthPlugin,
@@ -55,6 +56,7 @@ export class ExperienceRuntime {
     this.sdk.use(pageVisitsPlugin);
     this.sdk.use(timeDelayPlugin);
     this.sdk.use(modalPlugin);
+    this.sdk.use(inlinePlugin);
     this.sdk.use(bannerPlugin);
 
     // Listen for trigger events from display condition plugins
