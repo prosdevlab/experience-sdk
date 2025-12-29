@@ -38,6 +38,8 @@
         "packages/plugins/src/time-delay/time-delay.ts",
         "packages/plugins/src/modal/modal.ts",
         "packages/plugins/src/modal/types.ts",
+        "packages/plugins/src/inline/inline.ts",
+        "packages/plugins/src/inline/types.ts",
         "packages/plugins/src/utils/sanitize.ts",
         "specs/**/contracts/types.ts",
         "docs/**/*.tsx"
