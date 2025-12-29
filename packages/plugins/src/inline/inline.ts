@@ -3,7 +3,7 @@ import type { StoragePlugin } from '@lytics/sdk-kit-plugins';
 import { storagePlugin } from '@lytics/sdk-kit-plugins';
 import { sanitizeHTML } from '../utils/sanitize';
 import { insertContent, removeContent } from './insertion';
-import type { InlineContent, InlinePlugin } from './types';
+import type { InlinePlugin } from './types';
 
 /**
  * SDK instance with storage plugin
@@ -16,7 +16,7 @@ type SDKWithStorage = SDK & { storage?: StoragePlugin };
  * Embeds experiences directly within page content using DOM selectors.
  * Supports multiple insertion positions and dismissal with persistence.
  */
-export const inlinePlugin = (plugin: any, instance: SDK): void => {
+export const inlinePlugin = (plugin: any, instance: SDK, config: any): void => {
   plugin.ns('experiences.inline');
 
   plugin.defaults({
@@ -46,7 +46,6 @@ export const inlinePlugin = (plugin: any, instance: SDK): void => {
   }
 
   const activeInlines = new Map<string, HTMLElement>();
-  const inlineConfig = (instance as any).config('inline') || {};
 
   /**
    * Show an inline experience
@@ -85,10 +84,13 @@ export const inlinePlugin = (plugin: any, instance: SDK): void => {
       });
 
       // Retry logic (if enabled)
-      if (inlineConfig.retry) {
+      const retryEnabled = config.get('inline.retry') ?? false;
+      const retryTimeout = config.get('inline.retryTimeout') ?? 5000;
+
+      if (retryEnabled) {
         setTimeout(() => {
           show(experience);
-        }, 1000);
+        }, retryTimeout);
       }
 
       return;
@@ -178,7 +180,7 @@ export const inlinePlugin = (plugin: any, instance: SDK): void => {
   });
 
   // Cleanup on destroy
-  instance.on('destroy', () => {
+  instance.on('sdk:destroy', () => {
     for (const id of Array.from(activeInlines.keys())) {
       remove(id);
     }
