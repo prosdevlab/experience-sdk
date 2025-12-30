@@ -177,8 +177,10 @@ export async function destroy(): Promise<void> {
  * import experiences from '@prosdevlab/experience-sdk';
  * await experiences.init();
  * ```
+ *
+ * For IIFE builds (script tag), this becomes window.experiences via default export
  */
-export const experiences = {
+const experiencesObject = {
   createInstance,
   init,
   register,
@@ -188,23 +190,17 @@ export const experiences = {
   getState,
   on,
   destroy,
-  // Expose plugin APIs from the default instance
-  get modal() {
-    return (defaultInstance as any).modal;
-  },
-  get inline() {
-    return (defaultInstance as any).inline;
-  },
-  get banner() {
-    return (defaultInstance as any).banner;
-  },
 };
 
-/**
- * Global singleton instance for IIFE builds
- *
- * When loaded via script tag, this object is available as `window.experiences`
- */
-if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).experiences = experiences;
-}
+const experiencesProxy = new Proxy(experiencesObject, {
+  get(target, prop) {
+    // Check wrapper functions first
+    if (prop in target && target[prop as keyof typeof target]) {
+      return target[prop as keyof typeof target];
+    }
+    // Fall back to SDK instance for plugin APIs (modal, inline, banner, etc.)
+    return (defaultInstance.sdk as any)[prop];
+  },
+});
+
+export { experiencesProxy as experiences };

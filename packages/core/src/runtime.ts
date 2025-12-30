@@ -33,7 +33,7 @@ import type {
  * - Explainability-first (every decision has reasons)
  */
 export class ExperienceRuntime {
-  private sdk: SDK;
+  public sdk: SDK; // Public for plugin API access via Proxy (readonly would prevent reinit)
   private experiences: Map<string, Experience> = new Map();
   private decisions: Decision[] = [];
   private initialized = false;
