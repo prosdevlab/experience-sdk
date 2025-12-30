@@ -1,362 +1,421 @@
 /**
- * Integration Tests - Display Condition Plugins
+ * Integration Tests
  *
- * Tests all 4 display condition plugins working together:
- * - Exit Intent
- * - Scroll Depth
- * - Page Visits
- * - Time Delay
+ * Tests the interaction between plugins to ensure they work together correctly.
+ *
+ * @vitest-environment happy-dom
  */
-
 import { SDK } from '@lytics/sdk-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { exitIntentPlugin, pageVisitsPlugin, scrollDepthPlugin, timeDelayPlugin } from './index';
+import { inlinePlugin } from './inline';
+import { modalPlugin } from './modal';
 
-// Type augmentation for plugin APIs
-type SDKWithPlugins = SDK & {
-  exitIntent?: any;
-  scrollDepth?: any;
-  pageVisits?: any;
-  timeDelay?: any;
-};
+function initSDK() {
+  const sdk = new SDK({ name: 'integration-test' });
+  sdk.use(modalPlugin);
+  sdk.use(inlinePlugin);
 
-describe('Display Condition Plugins - Integration', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    // Reset document state
-    Object.defineProperty(document, 'hidden', {
-      writable: true,
-      configurable: true,
-      value: false,
-    });
-    // Clear storage
-    sessionStorage.clear();
-    localStorage.clear();
+  if (!document.body) {
+    document.body = document.createElement('body');
+  }
+
+  return sdk;
+}
+
+describe('Plugin Integration Tests', () => {
+  let sdk: SDK & { modal?: any; inline?: any };
+
+  beforeEach(async () => {
+    sdk = initSDK();
+    await sdk.init();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.useRealTimers();
+  afterEach(async () => {
+    for (const el of document.querySelectorAll('.xp-modal, .xp-inline')) {
+      el.remove();
+    }
+    document.body.innerHTML = '';
+    if (sdk) {
+      await sdk.destroy();
+    }
   });
 
-  describe('Plugin Composition', () => {
-    it('should load all 4 plugins without conflicts', async () => {
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [25, 50, 75], throttle: 100 },
-        pageVisits: { enabled: true },
-        timeDelay: { delay: 5000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+  describe('Modal + Inline Interaction', () => {
+    it('should show modal and inline simultaneously', async () => {
+      const shownHandler = vi.fn();
+      sdk.on('experiences:shown', shownHandler);
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
+      const target = document.createElement('div');
+      target.id = 'content';
+      document.body.appendChild(target);
 
-      await sdk.init();
+      const modalExp = {
+        id: 'popup',
+        type: 'modal',
+        content: {
+          title: 'Special Offer',
+          message: 'Limited time only!',
+          buttons: [{ text: 'Learn More', variant: 'primary' }],
+        },
+      };
 
-      // All plugins should expose their APIs
-      expect(sdk.exitIntent).toBeDefined();
-      expect(sdk.scrollDepth).toBeDefined();
-      expect(sdk.pageVisits).toBeDefined();
-      expect(sdk.timeDelay).toBeDefined();
-    });
+      const inlineExp = {
+        id: 'inline-banner',
+        type: 'inline',
+        content: {
+          selector: '#content',
+          message: '<p>Related: Check out our guide.</p>',
+        },
+      };
 
-    it('should handle multiple triggers firing independently', async () => {
-      const events: Array<{ type: string; data: any }> = [];
+      sdk.modal.show(modalExp);
+      sdk.inline.show(inlineExp);
 
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        pageVisits: { enabled: true, autoIncrement: true },
-        timeDelay: { delay: 2000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
-
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
-
-      // Listen to all trigger events
-      sdk.on('trigger:exitIntent', (data) => events.push({ type: 'exitIntent', data }));
-      sdk.on('trigger:scrollDepth', (data) => events.push({ type: 'scrollDepth', data }));
-      sdk.on('trigger:timeDelay', (data) => events.push({ type: 'timeDelay', data }));
-      sdk.on('pageVisits:incremented', (data) => events.push({ type: 'pageVisits', data }));
-
-      await sdk.init();
-
-      // Page visits should fire on init
-      expect(events.some((e) => e.type === 'pageVisits')).toBe(true);
-
-      // Time delay should fire after 2s
-      vi.advanceTimersByTime(2000);
-      expect(events.some((e) => e.type === 'timeDelay')).toBe(true);
-
-      // All events should be distinct
-      const types = new Set(events.map((e) => e.type));
-      expect(types.size).toBeGreaterThan(1);
-    });
-
-    it('should update context correctly for all triggers', async () => {
-      const contextUpdates: any[] = [];
-
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        pageVisits: { enabled: true },
-        timeDelay: { delay: 1000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
-
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
-
-      // Capture context after each trigger
-      sdk.on('trigger:exitIntent', () => {
-        contextUpdates.push({ trigger: 'exitIntent', timestamp: Date.now() });
-      });
-      sdk.on('trigger:timeDelay', () => {
-        contextUpdates.push({ trigger: 'timeDelay', timestamp: Date.now() });
+      await vi.waitFor(() => {
+        expect(shownHandler).toHaveBeenCalledTimes(2);
       });
 
-      await sdk.init();
+      expect(document.querySelector('.xp-modal')).toBeTruthy();
+      expect(document.querySelector('.xp-inline')).toBeTruthy();
+    });
 
-      vi.advanceTimersByTime(1000);
+    it('should dismiss modal without affecting inline', async () => {
+      const dismissedHandler = vi.fn();
+      sdk.on('experiences:dismissed', dismissedHandler);
 
-      // Should have multiple context updates
-      expect(contextUpdates.length).toBeGreaterThan(0);
+      const target = document.createElement('div');
+      target.id = 'content';
+      document.body.appendChild(target);
+
+      const modalExp = {
+        id: 'dismissable-modal',
+        type: 'modal',
+        content: {
+          title: 'Notification',
+          message: 'This is a modal.',
+          dismissable: true,
+        },
+      };
+
+      const inlineExp = {
+        id: 'persistent-inline',
+        type: 'inline',
+        content: {
+          selector: '#content',
+          message: '<p>This stays.</p>',
+        },
+      };
+
+      sdk.modal.show(modalExp);
+      sdk.inline.show(inlineExp);
+
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal')).toBeTruthy();
+        expect(document.querySelector('.xp-inline')).toBeTruthy();
+      });
+
+      // Dismiss modal
+      const closeBtn = document.querySelector('.xp-modal__close') as HTMLElement;
+      closeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(dismissedHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'dismissable-modal',
+          })
+        );
+      });
+
+      // Modal gone, inline remains
+      expect(document.querySelector('.xp-modal')).toBeFalsy();
+      expect(document.querySelector('.xp-inline')).toBeTruthy();
+    });
+
+    it('should dismiss inline without affecting modal', async () => {
+      const target = document.createElement('div');
+      target.id = 'content';
+      document.body.appendChild(target);
+
+      const modalExp = {
+        id: 'persistent-modal',
+        type: 'modal',
+        content: {
+          title: 'Stay Open',
+          message: 'This modal stays.',
+        },
+      };
+
+      const inlineExp = {
+        id: 'dismissable-inline',
+        type: 'inline',
+        content: {
+          selector: '#content',
+          message: '<p>Can dismiss</p>',
+          dismissable: true,
+        },
+      };
+
+      sdk.modal.show(modalExp);
+      sdk.inline.show(inlineExp);
+
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal')).toBeTruthy();
+        expect(document.querySelector('.xp-inline')).toBeTruthy();
+      });
+
+      // Dismiss inline
+      const closeBtn = document.querySelector('.xp-inline__close') as HTMLElement;
+      closeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-inline')).toBeFalsy();
+      });
+
+      // Inline gone, modal remains
+      expect(document.querySelector('.xp-modal')).toBeTruthy();
     });
   });
 
-  describe('Complex Targeting Logic', () => {
-    it('should support AND logic (multiple conditions)', async () => {
-      const sdk = new SDK({
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        timeDelay: { delay: 2000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+  describe('Modal Forms', () => {
+    it('should render and submit form in modal', async () => {
+      const formSubmitHandler = vi.fn();
+      sdk.on('experiences:modal:form:submit', formSubmitHandler);
 
-      sdk.use(scrollDepthPlugin);
-      sdk.use(timeDelayPlugin);
+      const experience = {
+        id: 'newsletter',
+        type: 'modal',
+        content: {
+          title: 'Subscribe',
+          message: 'Get updates.',
+          size: 'sm',
+          form: {
+            fields: [
+              { name: 'email', type: 'email', required: true, placeholder: 'you@example.com' },
+            ],
+            submitButton: { text: 'Subscribe', variant: 'primary' },
+          },
+        },
+      };
 
-      await sdk.init();
+      sdk.modal.show(experience);
 
-      // Before: neither condition met
-      const scrolled50 = (sdk.scrollDepth?.getMaxPercent() || 0) >= 50;
-      let delayed2s = sdk.timeDelay?.isTriggered() || false;
-      expect(scrolled50 && delayed2s).toBe(false);
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal__form')).toBeTruthy();
+      });
 
-      // Advance time
-      vi.advanceTimersByTime(2000);
-      delayed2s = sdk.timeDelay?.isTriggered() || false;
+      // Fill and submit form
+      const emailInput = document.querySelector('input[name="email"]') as HTMLInputElement;
+      emailInput.value = 'test@example.com';
+      emailInput.dispatchEvent(new Event('input', { bubbles: true }));
 
-      // Still false (scroll not met)
-      expect(scrolled50 && delayed2s).toBe(false);
+      const form = document.querySelector('.xp-modal__form') as HTMLFormElement;
+      form.dispatchEvent(new Event('submit', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(formSubmitHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            experienceId: 'newsletter',
+            formData: { email: 'test@example.com' },
+          })
+        );
+      });
     });
 
-    it('should support OR logic (any condition)', async () => {
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        timeDelay: { delay: 2000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+    it('should validate form fields', async () => {
+      const validationHandler = vi.fn();
+      sdk.on('experiences:modal:form:validation', validationHandler);
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(timeDelayPlugin);
+      const experience = {
+        id: 'form-validation',
+        type: 'modal',
+        content: {
+          form: {
+            fields: [{ name: 'email', type: 'email', required: true }],
+            submitButton: { text: 'Submit', variant: 'primary' },
+          },
+        },
+      };
 
-      await sdk.init();
+      sdk.modal.show(experience);
 
-      // Trigger time delay
-      vi.advanceTimersByTime(2000);
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal__form')).toBeTruthy();
+      });
 
-      const exitTriggered = sdk.exitIntent?.isTriggered() || false;
-      const timeTriggered = sdk.timeDelay?.isTriggered() || false;
+      // Submit empty form (should fail validation)
+      const form = document.querySelector('.xp-modal__form') as HTMLFormElement;
+      form.dispatchEvent(new Event('submit', { bubbles: true }));
 
-      // OR logic: one is true
-      expect(exitTriggered || timeTriggered).toBe(true);
-    });
-
-    it('should support NOT logic (inverse conditions)', async () => {
-      const sdk = new SDK({
-        pageVisits: { enabled: true, autoIncrement: true },
-      }) as SDKWithPlugins;
-
-      sdk.use(pageVisitsPlugin);
-
-      await sdk.init();
-
-      // After init with autoIncrement, it's no longer first visit
-      // (count was incremented from 0 to 1)
-      const isFirstVisit = sdk.pageVisits?.isFirstVisit() || false;
-      const totalCount = sdk.pageVisits?.getTotalCount() || 0;
-
-      expect(totalCount).toBe(1);
-      expect(isFirstVisit).toBe(false); // Auto-incremented, so not "first" anymore
-
-      // Simulate second visit
-      sdk.pageVisits?.increment();
-      const nowCount = sdk.pageVisits?.getTotalCount() || 0;
-      expect(nowCount).toBe(2);
+      await vi.waitFor(() => {
+        expect(validationHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            valid: false,
+            errors: expect.any(Object),
+          })
+        );
+      });
     });
   });
 
-  describe('Performance', () => {
-    it('should have minimal overhead with all plugins loaded', async () => {
-      const startTime = performance.now();
+  describe('Multiple Instances', () => {
+    it('should handle multiple inline experiences in different locations', async () => {
+      const target1 = document.createElement('div');
+      target1.id = 'sidebar';
+      document.body.appendChild(target1);
 
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [25, 50, 75], throttle: 100 },
-        pageVisits: { enabled: true },
-        timeDelay: { delay: 5000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+      const target2 = document.createElement('div');
+      target2.id = 'footer';
+      document.body.appendChild(target2);
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
+      sdk.inline.show({
+        id: 'sidebar-promo',
+        type: 'inline',
+        content: {
+          selector: '#sidebar',
+          message: '<p>Sidebar content</p>',
+        },
+      });
 
-      await sdk.init();
+      sdk.inline.show({
+        id: 'footer-cta',
+        type: 'inline',
+        content: {
+          selector: '#footer',
+          message: '<p>Footer content</p>',
+        },
+      });
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
+      await vi.waitFor(() => {
+        expect(document.querySelectorAll('.xp-inline').length).toBe(2);
+      });
 
-      // Should initialize in less than 50ms
-      expect(duration).toBeLessThan(50);
+      expect(target1.querySelector('.xp-inline')).toBeTruthy();
+      expect(target2.querySelector('.xp-inline')).toBeTruthy();
     });
 
-    it('should not leak memory with multiple resets', async () => {
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        pageVisits: { enabled: true },
-        timeDelay: { delay: 1000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+    it('should replace existing modal when showing a new one', async () => {
+      const dismissedHandler = vi.fn();
+      sdk.on('experiences:dismissed', dismissedHandler);
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
+      // Show first modal
+      sdk.modal.show({
+        id: 'modal1',
+        type: 'modal',
+        content: { title: 'First', message: 'Modal 1' },
+      });
 
-      await sdk.init();
+      await vi.waitFor(() => {
+        expect(sdk.modal.isShowing('modal1')).toBe(true);
+      });
 
-      // Reset all plugins multiple times
-      for (let i = 0; i < 100; i++) {
-        sdk.exitIntent?.reset();
-        sdk.scrollDepth?.reset();
-        sdk.pageVisits?.reset();
-        sdk.timeDelay?.reset();
-      }
+      // Show second modal (should replace first)
+      sdk.modal.show({
+        id: 'modal2',
+        type: 'modal',
+        content: { title: 'Second', message: 'Modal 2' },
+      });
 
-      // Should not throw or hang
-      expect(sdk.exitIntent?.isTriggered()).toBe(false);
-      expect(sdk.scrollDepth?.getMaxPercent()).toBe(0);
-      expect(sdk.timeDelay?.isTriggered()).toBe(false);
+      await vi.waitFor(() => {
+        expect(sdk.modal.isShowing('modal2')).toBe(true);
+      });
+
+      // Only second modal should be showing
+      expect(sdk.modal.isShowing('modal1')).toBe(false);
+      expect(sdk.modal.isShowing('modal2')).toBe(true);
+      expect(document.querySelectorAll('.xp-modal').length).toBe(1);
+    });
+
+    it('should prevent showing the same modal twice', async () => {
+      const shownHandler = vi.fn();
+      sdk.on('experiences:shown', shownHandler);
+
+      const experience = {
+        id: 'duplicate-test',
+        type: 'modal',
+        content: { title: 'Test', message: 'Cannot show twice' },
+      };
+
+      sdk.modal.show(experience);
+      sdk.modal.show(experience); // Try to show again
+
+      await vi.waitFor(() => {
+        expect(shownHandler).toHaveBeenCalledTimes(1);
+      });
+
+      // Only one modal in DOM
+      expect(document.querySelectorAll('[data-xp-id="duplicate-test"]').length).toBe(1);
     });
   });
 
   describe('Cleanup', () => {
-    it('should cleanup all plugins on destroy', async () => {
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        pageVisits: { enabled: true },
-        timeDelay: { delay: 5000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+    it('should clean up all experiences on destroy', async () => {
+      const target = document.createElement('div');
+      target.id = 'content';
+      document.body.appendChild(target);
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(scrollDepthPlugin);
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
+      sdk.modal.show({
+        id: 'modal',
+        type: 'modal',
+        content: { title: 'Modal', message: 'Content' },
+      });
 
-      await sdk.init();
+      sdk.inline.show({
+        id: 'inline',
+        type: 'inline',
+        content: { selector: '#content', message: '<p>Inline</p>' },
+      });
 
-      // Destroy SDK
-      sdk.emit('destroy');
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal')).toBeTruthy();
+        expect(document.querySelector('.xp-inline')).toBeTruthy();
+      });
 
-      // Advance time past all delays
-      vi.advanceTimersByTime(10000);
+      await sdk.destroy();
 
-      // Plugins should be cleaned up (no crashes)
-      expect(() => {
-        vi.advanceTimersByTime(1000);
-      }).not.toThrow();
+      expect(document.querySelector('.xp-modal')).toBeFalsy();
+      expect(document.querySelector('.xp-inline')).toBeFalsy();
     });
   });
 
-  describe('Real-World Scenarios', () => {
-    it('should handle "engaged user" scenario (scroll + time)', async () => {
-      const sdk = new SDK({
-        scrollDepth: { thresholds: [50], throttle: 100 },
-        timeDelay: { delay: 5000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
+  describe('Event Flow', () => {
+    it('should emit events in correct order for modal', async () => {
+      const events: string[] = [];
 
-      sdk.use(scrollDepthPlugin);
-      sdk.use(timeDelayPlugin);
+      sdk.on('experiences:shown', () => events.push('shown'));
+      sdk.on('experiences:action', () => events.push('action'));
+      sdk.on('experiences:dismissed', () => events.push('dismissed'));
 
-      await sdk.init();
+      sdk.modal.show({
+        id: 'event-test',
+        type: 'modal',
+        content: {
+          title: 'Test',
+          message: 'Testing events',
+          buttons: [{ text: 'Click Me', variant: 'primary', action: 'test' }],
+          dismissable: true,
+        },
+      });
 
-      // User spends 5 seconds (time condition met)
-      vi.advanceTimersByTime(5000);
+      await vi.waitFor(() => {
+        expect(document.querySelector('.xp-modal')).toBeTruthy();
+      });
 
-      const timeElapsed = sdk.timeDelay?.isTriggered() || false;
-      const scrolled50 = (sdk.scrollDepth?.getMaxPercent() || 0) >= 50;
+      // Click button
+      const button = document.querySelector('.xp-modal__button') as HTMLElement;
+      button.click();
 
-      // Could show "engaged user" offer even without scroll
-      expect(timeElapsed).toBe(true);
-      expect(timeElapsed || scrolled50).toBe(true); // OR logic
-    });
+      await vi.waitFor(() => {
+        expect(events).toContain('action');
+      });
 
-    it('should handle "returning visitor exit intent" scenario', async () => {
-      const sdk = new SDK({
-        exitIntent: { sensitivity: 50, minTimeOnPage: 0, disableOnMobile: false },
-        pageVisits: { enabled: true, autoIncrement: true },
-      }) as SDKWithPlugins;
+      // Dismiss modal
+      sdk.modal.remove('event-test');
 
-      sdk.use(exitIntentPlugin);
-      sdk.use(pageVisitsPlugin);
+      await vi.waitFor(() => {
+        expect(events).toContain('dismissed');
+      });
 
-      await sdk.init();
-
-      // Simulate more visits
-      sdk.pageVisits?.increment();
-      sdk.pageVisits?.increment();
-
-      const isFirstVisit = sdk.pageVisits?.isFirstVisit() || false;
-      const totalVisits = sdk.pageVisits?.getTotalCount() || 0;
-
-      // After multiple increments
-      expect(isFirstVisit).toBe(false);
-      expect(totalVisits).toBeGreaterThan(1);
-
-      // Logic for returning visitor targeting
-      const isReturningVisitor = !isFirstVisit && totalVisits > 2;
-      expect(isReturningVisitor).toBe(true);
-    });
-
-    it('should handle "first-time visitor welcome" scenario', async () => {
-      const sdk = new SDK({
-        pageVisits: { enabled: true, autoIncrement: true },
-        timeDelay: { delay: 3000, pauseWhenHidden: false },
-      }) as SDKWithPlugins;
-
-      sdk.use(pageVisitsPlugin);
-      sdk.use(timeDelayPlugin);
-
-      await sdk.init();
-
-      const totalCount = sdk.pageVisits?.getTotalCount() || 0;
-
-      // Should have at least 1 visit after auto-increment
-      expect(totalCount).toBeGreaterThanOrEqual(1);
-
-      // Wait 3 seconds
-      vi.advanceTimersByTime(3000);
-      const timeElapsed = sdk.timeDelay?.isTriggered() || false;
-      expect(timeElapsed).toBe(true);
-
-      // Logic: Show welcome after delay for low-count visitors
-      const shouldShowWelcome = totalCount <= 1 && timeElapsed;
-      expect(shouldShowWelcome).toBe(true);
+      expect(events).toEqual(['shown', 'action', 'dismissed']);
     });
   });
 });

@@ -484,6 +484,14 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
     // Don't show if already showing
     if (activeModals.has(experienceId)) return;
 
+    // Hide any existing modals (prevent stacking for better UX)
+    if (activeModals.size > 0) {
+      const existingIds = Array.from(activeModals.keys());
+      for (const id of existingIds) {
+        removeModal(id);
+      }
+    }
+
     // Store currently focused element
     previouslyFocusedElement.set(experienceId, document.activeElement as HTMLElement);
 
