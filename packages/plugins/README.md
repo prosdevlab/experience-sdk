@@ -2,11 +2,7 @@
 
 Official plugins for [Experience SDK](https://github.com/prosdevlab/experience-sdk).
 
-# @prosdevlab/experience-sdk-plugins
-
-Official plugins for [Experience SDK](https://github.com/prosdevlab/experience-sdk).
-
-**Size:** 78.31 KB uncompressed, 12.7 KB gzipped
+**Size:** 12.7 KB gzipped (all plugins)
 
 ## Included Plugins
 

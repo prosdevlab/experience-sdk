@@ -67,12 +67,12 @@ Seamless integration with existing display condition plugins:
 - **Excellent Compression**: CSS-in-JS with CSS variables maintains small footprint
 
 ## 🧪 Testing
-- **427 tests passing** (unit, integration, browser tests)
-- **Modal Plugin**: 50+ tests for core functionality, forms, keyboard nav, accessibility
-- **Inline Plugin**: 24+ tests for DOM insertion, dismissal, persistence
-- **Form Validation**: 35+ tests for all field types and edge cases
-- **Integration Tests**: 10+ tests for plugin interactions
-- **Browser Tests**: 5+ tests with Playwright for real browser behavior
+- **432 tests passing** (unit, integration, browser tests)
+- **Modal Plugin**: 56 tests for core functionality, forms, keyboard nav, accessibility
+- **Inline Plugin**: 24 tests for DOM insertion, dismissal, persistence
+- **Form Validation**: 35 tests for all field types and edge cases
+- **Integration Tests**: 10 tests for plugin interactions
+- **Exit Intent**: 21 tests with timing and sensitivity validation
 
 ## 📚 Documentation
 - **Modal Plugin Reference**: Complete API docs with examples
