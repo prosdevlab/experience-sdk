@@ -15,19 +15,22 @@ export {
   evaluateExperience,
   evaluateUrlRule,
 } from './runtime';
-
 // Export singleton API
+// Default export for IIFE builds (script tag)
+// This is what gets exposed as window.experiences
 export {
   createInstance,
   destroy,
   evaluate,
   evaluateAll,
+  experiences, // Named exportexperiences as default,
   explain,
   getState,
   init,
   on,
   register,
 } from './singleton';
+
 // Export all types
 export type {
   BannerContent,
