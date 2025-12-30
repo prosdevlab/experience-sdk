@@ -15,7 +15,7 @@ export interface Experience {
   /** Unique identifier for the experience */
   id: string;
   /** Type of experience to render */
-  type: 'banner' | 'modal' | 'tooltip';
+  type: 'banner' | 'modal' | 'tooltip' | 'inline';
   /** Rules that determine when/where to show this experience */
   targeting: TargetingRules;
   /** Content to display (type-specific) */
@@ -24,6 +24,8 @@ export interface Experience {
   frequency?: FrequencyConfig;
   /** Priority for ordering (higher = more important, default: 0) */
   priority?: number;
+  /** Display conditions (triggers, timing) */
+  display?: DisplayConditions;
 }
 
 /**
@@ -76,6 +78,20 @@ export interface FrequencyConfig {
   max: number;
   /** Time period for the cap */
   per: 'session' | 'day' | 'week';
+}
+
+/**
+ * Display Conditions
+ *
+ * Conditions that determine when an experience should be displayed.
+ */
+export interface DisplayConditions {
+  /** Trigger type (e.g., scrollDepth, exitIntent, timeDelay) */
+  trigger?: string;
+  /** Trigger-specific configuration data */
+  triggerData?: any;
+  /** Frequency capping for this experience */
+  frequency?: FrequencyConfig;
 }
 
 // Import plugin-specific content types from plugins package

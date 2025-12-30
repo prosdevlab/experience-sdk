@@ -11,7 +11,7 @@
  * Allowed HTML tags for sanitization
  * Only safe formatting tags are permitted
  */
-const ALLOWED_TAGS = ['strong', 'em', 'a', 'br', 'span', 'b', 'i', 'p'] as const;
+const ALLOWED_TAGS = ['strong', 'em', 'a', 'br', 'span', 'b', 'i', 'p', 'div', 'ul', 'li'] as const;
 
 /**
  * Allowed attributes per tag
@@ -20,6 +20,9 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
   a: ['href', 'class', 'style', 'title'],
   span: ['class', 'style'],
   p: ['class', 'style'],
+  div: ['class', 'style'],
+  ul: ['class', 'style'],
+  li: ['class', 'style'],
   // Other tags have no attributes allowed
 };
 

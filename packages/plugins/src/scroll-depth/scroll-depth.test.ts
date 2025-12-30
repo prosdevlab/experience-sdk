@@ -501,6 +501,41 @@ describe('scrollDepthPlugin', () => {
     });
   });
 
+  describe('reset()', () => {
+    it('should clear triggered thresholds and max scroll', async () => {
+      const emitSpy = vi.fn();
+
+      await initPlugin({ thresholds: [25, 50, 75] });
+      sdk.on('trigger:scrollDepth', emitSpy);
+      vi.advanceTimersByTime(0);
+
+      // Scroll to 50%
+      simulateScroll(1000, 3000, 1000);
+      vi.advanceTimersByTime(200);
+
+      // Should have triggered 25% and 50%
+      expect(sdk.scrollDepth.getThresholdsCrossed()).toEqual([25, 50]);
+      expect(sdk.scrollDepth.getMaxPercent()).toBeGreaterThan(0);
+      expect(emitSpy).toHaveBeenCalledTimes(2);
+
+      // Reset
+      sdk.scrollDepth.reset();
+
+      // Should clear state
+      expect(sdk.scrollDepth.getThresholdsCrossed()).toEqual([]);
+      expect(sdk.scrollDepth.getMaxPercent()).toBe(0);
+
+      // Scroll again to 50% should trigger again
+      emitSpy.mockClear();
+      simulateScroll(1000, 3000, 1000);
+      vi.advanceTimersByTime(200);
+
+      // Should trigger both 25% and 50% again
+      expect(emitSpy).toHaveBeenCalledTimes(2);
+      expect(sdk.scrollDepth.getThresholdsCrossed()).toEqual([25, 50]);
+    });
+  });
+
   describe('Pathfora compatibility tests', () => {
     it('should match Pathfora test: scrollPercentageToDisplay 50', async () => {
       const emitSpy = vi.fn();

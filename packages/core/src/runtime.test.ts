@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExperienceRuntime, evaluateUrlRule } from './runtime';
+import { ExperienceRuntime, evaluateExperience, evaluateUrlRule } from './runtime';
 
 describe('ExperienceRuntime', () => {
   let runtime: ExperienceRuntime;
@@ -447,6 +447,114 @@ describe('ExperienceRuntime', () => {
     });
   });
 
+  describe('display trigger evaluation', () => {
+    it('should match experience when scrollDepth threshold is reached', () => {
+      const experience = {
+        id: 'scroll-test',
+        type: 'inline' as const,
+        content: {},
+        targeting: {},
+        display: {
+          trigger: 'scrollDepth',
+          triggerData: { threshold: 50 },
+        },
+      };
+
+      const context = {
+        url: 'https://example.com',
+        timestamp: Date.now(),
+        triggers: {
+          scrollDepth: {
+            triggered: true,
+            threshold: 50,
+            percent: 50.5,
+          },
+        },
+      };
+
+      const result = evaluateExperience(experience, context);
+      expect(result.matched).toBe(true);
+      expect(result.reasons).toContain('Scroll depth threshold (50%) reached');
+    });
+
+    it('should not match experience when scrollDepth threshold does not match', () => {
+      const experience = {
+        id: 'scroll-test',
+        type: 'inline' as const,
+        content: {},
+        targeting: {},
+        display: {
+          trigger: 'scrollDepth',
+          triggerData: { threshold: 50 },
+        },
+      };
+
+      const context = {
+        url: 'https://example.com',
+        timestamp: Date.now(),
+        triggers: {
+          scrollDepth: {
+            triggered: true,
+            threshold: 25, // Different threshold
+            percent: 25.5,
+          },
+        },
+      };
+
+      const result = evaluateExperience(experience, context);
+      expect(result.matched).toBe(false);
+      expect(result.reasons).toContain('Scroll depth threshold mismatch (expected 50%, got 25%)');
+    });
+
+    it('should not match experience when trigger has not fired', () => {
+      const experience = {
+        id: 'scroll-test',
+        type: 'inline' as const,
+        content: {},
+        targeting: {},
+        display: {
+          trigger: 'exitIntent',
+        },
+      };
+
+      const context = {
+        url: 'https://example.com',
+        timestamp: Date.now(),
+        triggers: {},
+      };
+
+      const result = evaluateExperience(experience, context);
+      expect(result.matched).toBe(false);
+      expect(result.reasons).toContain('Waiting for exitIntent trigger');
+    });
+
+    it('should match non-scrollDepth triggers when triggered', () => {
+      const experience = {
+        id: 'exit-test',
+        type: 'modal' as const,
+        content: {},
+        targeting: {},
+        display: {
+          trigger: 'exitIntent',
+        },
+      };
+
+      const context = {
+        url: 'https://example.com',
+        timestamp: Date.now(),
+        triggers: {
+          exitIntent: {
+            triggered: true,
+          },
+        },
+      };
+
+      const result = evaluateExperience(experience, context);
+      expect(result.matched).toBe(true);
+      expect(result.reasons).toContain('exitIntent trigger fired');
+    });
+  });
+
   describe('frequency targeting', () => {
     it('should track frequency rule in trace', async () => {
       await runtime.init();
@@ -622,7 +730,7 @@ describe('ExperienceRuntime', () => {
       expect(decisions2.find((d) => d.experienceId === 'capped')?.show).toBe(false);
     });
 
-    it('should emit experiences:evaluated event with array', () => {
+    it('should emit experiences:evaluated event for each matched experience', () => {
       const handler = vi.fn();
       runtime.on('experiences:evaluated', handler);
 
@@ -640,18 +748,20 @@ describe('ExperienceRuntime', () => {
 
       runtime.evaluateAll();
 
-      expect(handler).toHaveBeenCalledOnce();
-      expect(handler).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            decision: expect.objectContaining({ experienceId: 'banner1' }),
-            experience: expect.objectContaining({ id: 'banner1' }),
-          }),
-          expect.objectContaining({
-            decision: expect.objectContaining({ experienceId: 'banner2' }),
-            experience: expect.objectContaining({ id: 'banner2' }),
-          }),
-        ])
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          decision: expect.objectContaining({ experienceId: 'banner1' }),
+          experience: expect.objectContaining({ id: 'banner1' }),
+        })
+      );
+      expect(handler).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          decision: expect.objectContaining({ experienceId: 'banner2' }),
+          experience: expect.objectContaining({ id: 'banner2' }),
+        })
       );
     });
 
@@ -674,9 +784,9 @@ describe('ExperienceRuntime', () => {
       runtime.evaluateAll({ url: 'https://example.com/' });
 
       expect(handler).toHaveBeenCalledOnce();
-      const emittedDecisions = handler.mock.calls[0][0];
-      expect(emittedDecisions).toHaveLength(1);
-      expect(emittedDecisions[0].decision.experienceId).toBe('match');
+      const emittedData = handler.mock.calls[0][0];
+      expect(emittedData.decision.experienceId).toBe('match');
+      expect(emittedData.experience.id).toBe('match');
     });
 
     it('should return empty array when no experiences registered', () => {
