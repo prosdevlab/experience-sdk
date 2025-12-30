@@ -99,8 +99,10 @@ export class ExperienceRuntime {
           ...data, // Merge trigger-specific data
         };
 
-        // Re-evaluate all experiences with updated context
-        this.evaluate(this.triggerContext);
+        // Re-evaluate ALL experiences with updated trigger context
+        // Using evaluateAll() to show multiple matching experiences
+        // buildContext() will automatically add the current URL
+        this.evaluateAll(this.triggerContext);
       });
     }
   }
@@ -336,20 +338,20 @@ export class ExperienceRuntime {
       this.decisions.push(decision);
     }
 
-    // Emit single event with all decisions (array)
-    // Plugins can filter to their relevant experiences
+    // Emit one event per matched experience
+    // This allows plugins to react individually to each experience
     const matchedDecisions = decisions.filter((d) => d.show);
-    const matchedExperiences = matchedDecisions
-      .map((d) => d.experienceId && this.experiences.get(d.experienceId))
-      .filter((exp): exp is Experience => exp !== undefined);
-
-    this.sdk.emit(
-      'experiences:evaluated',
-      matchedDecisions.map((decision, index) => ({
-        decision,
-        experience: matchedExperiences[index],
-      }))
-    );
+    for (const decision of matchedDecisions) {
+      const experience = decision.experienceId
+        ? this.experiences.get(decision.experienceId)
+        : undefined;
+      if (experience) {
+        this.sdk.emit('experiences:evaluated', {
+          decision,
+          experience,
+        });
+      }
+    }
 
     return decisions;
   }
@@ -442,7 +444,7 @@ export function evaluateExperience(
   let matched = true;
 
   // Evaluate URL rule
-  if (experience.targeting.url) {
+  if (experience.targeting?.url) {
     const urlStart = Date.now();
     const urlMatch = evaluateUrlRule(experience.targeting.url, context.url);
 
@@ -460,6 +462,36 @@ export function evaluateExperience(
     } else {
       reasons.push('URL does not match targeting rule');
       matched = false;
+    }
+  }
+
+  // Evaluate display trigger conditions
+  if (experience.display?.trigger && context.triggers) {
+    const triggerType = experience.display.trigger;
+    const triggerData = context.triggers[triggerType];
+
+    // Check if this trigger has fired
+    if (!triggerData?.triggered) {
+      reasons.push(`Waiting for ${triggerType} trigger`);
+      matched = false;
+    } else {
+      // For scrollDepth, check if threshold matches
+      if (triggerType === 'scrollDepth' && experience.display.triggerData?.threshold) {
+        const expectedThreshold = experience.display.triggerData.threshold;
+        const actualThreshold = triggerData.threshold;
+
+        if (actualThreshold === expectedThreshold) {
+          reasons.push(`Scroll depth threshold (${expectedThreshold}%) reached`);
+        } else {
+          reasons.push(
+            `Scroll depth threshold mismatch (expected ${expectedThreshold}%, got ${actualThreshold}%)`
+          );
+          matched = false;
+        }
+      } else {
+        // Other triggers just need to be triggered
+        reasons.push(`${triggerType} trigger fired`);
+      }
     }
   }
 

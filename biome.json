@@ -31,6 +31,7 @@
       "includes": [
         "packages/core/src/types.ts",
         "packages/core/src/runtime.ts",
+        "packages/core/src/singleton.ts",
         "packages/plugins/src/types.ts",
         "packages/plugins/src/exit-intent/exit-intent.ts",
         "packages/plugins/src/scroll-depth/scroll-depth.ts",

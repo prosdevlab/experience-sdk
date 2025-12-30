@@ -445,6 +445,30 @@ describe('Inline Plugin', () => {
       expect(inlines.length).toBe(2);
     });
 
+    it('should prevent duplicate inline experiences', () => {
+      const target = document.createElement('div');
+      target.id = 'test-target';
+      document.body.appendChild(target);
+
+      const experience = {
+        id: 'duplicate-test',
+        type: 'inline' as const,
+        content: {
+          selector: '#test-target',
+          message: '<p>Content</p>',
+        },
+      };
+
+      // Show the same experience twice
+      sdk.inline.show(experience);
+      sdk.inline.show(experience);
+
+      // Should only insert once
+      const inlines = document.querySelectorAll('[data-xp-id="duplicate-test"]');
+      expect(inlines.length).toBe(1);
+      expect(sdk.inline.isShowing('duplicate-test')).toBe(true);
+    });
+
     it('should check if specific inline is showing', () => {
       const target = document.createElement('div');
       target.id = 'test-target';
@@ -508,32 +532,6 @@ describe('Inline Plugin', () => {
             type: 'inline',
             selector: '#test-target',
             position: 'replace',
-          })
-        );
-      });
-    });
-
-    it('should emit trigger:inline event', async () => {
-      const target = document.createElement('div');
-      target.id = 'test-target';
-      document.body.appendChild(target);
-
-      const triggerHandler = vi.fn();
-      sdk.on('trigger:inline', triggerHandler);
-
-      sdk.inline.show({
-        id: 'trigger-test',
-        type: 'inline',
-        content: {
-          selector: '#test-target',
-          message: '<p>Content</p>',
-        },
-      });
-
-      await vi.waitFor(() => {
-        expect(triggerHandler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            experienceId: 'trigger-test',
           })
         );
       });

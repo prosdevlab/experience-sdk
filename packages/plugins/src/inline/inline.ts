@@ -53,6 +53,11 @@ export const inlinePlugin = (plugin: any, instance: SDK, config: any): void => {
   const show = (experience: any): void => {
     const { id, content } = experience;
 
+    // Check if already showing (prevent duplicates)
+    if (activeInlines.has(id)) {
+      return;
+    }
+
     // Check if dismissed and persisted
     if (content.persist && content.dismissable && sdkInstance.storage) {
       const dismissed = sdkInstance.storage.get(`xp-inline-dismissed-${id}`);
@@ -134,12 +139,6 @@ export const inlinePlugin = (plugin: any, instance: SDK, config: any): void => {
       position: content.position || 'replace',
       timestamp: Date.now(),
     });
-
-    // Emit trigger event (for chaining with other experiences)
-    instance.emit('trigger:inline', {
-      experienceId: id,
-      timestamp: Date.now(),
-    });
   };
 
   /**
@@ -211,6 +210,34 @@ function getInlineStyles(): string {
 
     .xp-inline {
       position: relative;
+      animation: xp-inline-enter 0.4s ease-out forwards;
+    }
+
+    @keyframes xp-inline-enter {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Respect user's motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      .xp-inline {
+        animation: xp-inline-enter-reduced 0.2s ease-out forwards;
+      }
+      
+      @keyframes xp-inline-enter-reduced {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
     }
 
     .xp-inline__close {

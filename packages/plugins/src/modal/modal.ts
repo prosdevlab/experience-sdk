@@ -666,10 +666,11 @@ export const modalPlugin = (plugin: any, instance: SDK): void => {
   });
 
   // Auto-show modal experiences when evaluated
-  instance.on('experiences:evaluated', (decision: any) => {
-    if (decision.show && decision.experienceId) {
-      const experience = decision.experience;
-      if (experience?.layout === 'modal') {
+  instance.on('experiences:evaluated', (data: any) => {
+    const { decision, experience } = data;
+    if (decision.show && decision.experienceId && experience) {
+      // Check if this is a modal experience (using 'type' property)
+      if (experience.type === 'modal') {
         showModal(experience);
       }
     }
