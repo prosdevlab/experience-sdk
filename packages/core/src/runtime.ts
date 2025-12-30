@@ -67,23 +67,42 @@ export class ExperienceRuntime {
    * Setup listeners for trigger:* events
    * This enables event-driven display conditions
    */
+  /**
+   * Setup listeners for trigger:* events
+   * This enables event-driven display conditions
+   *
+   * Note: sdk-kit's emitter passes only the event payload to wildcard listeners,
+   * not the event name. Display condition plugins must include trigger metadata
+   * in their payload (e.g., { trigger: 'exitIntent', ...data })
+   */
   private setupTriggerListeners(): void {
-    // Listen for all trigger:* events using wildcard
-    // When a trigger fires, update context and re-evaluate
-    this.sdk.on('trigger:*', (eventName: string, data: any) => {
-      const triggerName = eventName.replace('trigger:', '');
+    // Listen for specific trigger events
+    // We can't use 'trigger:*' wildcard because sdk-kit doesn't pass event name
+    // So we listen to each known trigger type individually
 
-      // Update trigger context
-      this.triggerContext.triggers = this.triggerContext.triggers || {};
-      this.triggerContext.triggers[triggerName] = {
-        triggered: true,
-        timestamp: Date.now(),
-        ...data, // Merge trigger-specific data
-      };
+    const triggerTypes = [
+      'exitIntent',
+      'scrollDepth',
+      'timeDelay',
+      'pageVisits',
+      'modal',
+      'inline',
+    ];
 
-      // Re-evaluate all experiences with updated context
-      this.evaluate(this.triggerContext);
-    });
+    for (const triggerType of triggerTypes) {
+      this.sdk.on(`trigger:${triggerType}`, (data: any) => {
+        // Update trigger context
+        this.triggerContext.triggers = this.triggerContext.triggers || {};
+        this.triggerContext.triggers[triggerType] = {
+          triggered: true,
+          timestamp: Date.now(),
+          ...data, // Merge trigger-specific data
+        };
+
+        // Re-evaluate all experiences with updated context
+        this.evaluate(this.triggerContext);
+      });
+    }
   }
 
   /**
