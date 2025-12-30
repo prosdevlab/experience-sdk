@@ -188,6 +188,16 @@ export const experiences = {
   getState,
   on,
   destroy,
+  // Expose plugin APIs from the default instance
+  get modal() {
+    return (defaultInstance as any).modal;
+  },
+  get inline() {
+    return (defaultInstance as any).inline;
+  },
+  get banner() {
+    return (defaultInstance as any).banner;
+  },
 };
 
 /**
